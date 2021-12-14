@@ -254,6 +254,30 @@ namespace DeskTopTimer
         public long? maxCacheCount { set;get;}
 
         public long? flushTime { set;get;}
+        
+        public bool isTopmost { set;get;}=true;
+
+        public int timeFontIndex { set;get;}=0;
+
+        public int weekendFontIndex { set;get;}=0;
+
+        public int timeFontSize { set;get;} =20;
+
+        public int weekendFontSize { set;get;}=12;
+
+        public string? timeFontColor { set;get;}
+        
+        public string? weekendFontColor { set;get;}
+
+        public bool isUsingVideoBackGround { set; get; }=false;
+
+        public string? videoDir { set; get; }
+
+        public string? selectedVideoPath { set; get; }
+
+        public bool isLoopPlay { set;get;}=true;
+
+        public double volume { set;get;} =1d;
     }
 
     public static class CommonFuncTool
@@ -404,4 +428,56 @@ namespace DeskTopTimer
             }
         }
     }
+
+    public static class ColorToStringHelper
+    {
+        public static String HexConverter(System.Windows.Media.Color c, bool UsingAlpha = true)
+        {
+            if (UsingAlpha)
+                return "#" + c.A.ToString("X2") + c.R.ToString("X2") + c.G.ToString("X2") + c.B.ToString("X2");
+            else
+                return "#" + c.R.ToString("X2") + c.G.ToString("X2") + c.B.ToString("X2");
+        }
+
+        public static int HexToInt(char hexChar)
+        {
+            hexChar = char.ToUpper(hexChar);  // may not be necessary
+
+            return (int)hexChar < (int)'A' ?
+                ((int)hexChar - (int)'0') :
+                10 + ((int)hexChar - (int)'A');
+        }
+
+        public static System.Windows.Media.Color HexConverter(string color, bool UsingAlpha = true)
+        {
+           
+            if(string.IsNullOrEmpty(color))
+                return Colors.White;
+            if (UsingAlpha)
+            {
+                var currentArray = color.Skip(1).ToArray();
+                byte a = Convert.ToByte(currentArray[0].ToString()+currentArray[1].ToString(),16);
+                byte r = Convert.ToByte(currentArray[2].ToString() + currentArray[3].ToString(),16);
+                byte g = Convert.ToByte(currentArray[4].ToString() + currentArray[5].ToString(),16);
+                byte b = Convert.ToByte(currentArray[6].ToString() + currentArray[7].ToString(),16);
+                return System.Windows.Media.Color.FromArgb(a,r,g,b);
+            }
+            else
+            {
+                var currentArray = color.ToArray();
+                byte r = Convert.ToByte(currentArray[0].ToString() + currentArray[1].ToString(),16);
+                byte g = Convert.ToByte(currentArray[2].ToString() + currentArray[3].ToString(),16);
+                byte b = Convert.ToByte(currentArray[4].ToString() + currentArray[5].ToString(),16);
+                return System.Windows.Media.Color.FromRgb(r, g, b);
+            }
+                
+        }
+
+        public static String RGBConverter(System.Windows.Media.Color c)
+        {
+            return "RGB(" + c.R.ToString() + "," + c.G.ToString() + "," + c.B.ToString() + ")";
+        }
+
+    }
+
 }

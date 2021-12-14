@@ -294,12 +294,17 @@ namespace DeskTopTimer
         {
             InitializeComponent();
             //WindowBlur.SetIsEnabled(this, true);
+            
             this.DataContext = MainWorkSpace;
             MainWorkSpace.CloseWindow += MainWorkSpace_CloseWindow;
             MainWorkSpace.BackgroundVideoChanged += MainWorkSpace_BackgroundVideoChanged;
             MainWorkSpace.VideoVolumnChanged += MainWorkSpace_VideoVolumnChanged;
             Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
+            Task.Run(() =>
+            {
+                MainWorkSpace.Init();
+            });
         }
 
         private void MainWorkSpace_VideoVolumnChanged(double value)
@@ -330,6 +335,7 @@ namespace DeskTopTimer
                     }
                     else
                     {
+       
                         Debug.WriteLine("已关闭当前文件");
                     }
                     
@@ -340,6 +346,14 @@ namespace DeskTopTimer
                 }
 
             }
+            else
+            {
+                IsPlayVideoSuccess = await BackgroundVideo.Close();
+                if(IsPlayVideoSuccess)
+                    Debug.WriteLine("已关闭当前文件");
+                else
+                    Debug.WriteLine("关闭当前文件失败");
+            }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -348,6 +362,7 @@ namespace DeskTopTimer
             IsWindowShow = true;
             BackgroundVideo.MediaStateChanged += BackgroundVideo_MediaStateChanged;
             BackgroundVideo.MessageLogged += BackgroundVideo_MessageLogged;
+
         }
 
         private void BackgroundVideo_MessageLogged(object? sender, Unosquare.FFME.Common.MediaLogMessageEventArgs e)
@@ -399,11 +414,6 @@ namespace DeskTopTimer
             MainWorkSpace.WriteCurrentSettingToJson();
         }
 
-        private void MenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            this.Topmost = !Topmost;
-        }
-
 
         private void BrowseFileDirButton_Click(object sender, RoutedEventArgs e)
         {
@@ -413,6 +423,11 @@ namespace DeskTopTimer
             {
                 MainWorkSpace.VideoPathDir = folderBrowserDialog.SelectedPath;
             }
+        }
+
+        private void TopMostMenu_Click(object sender, RoutedEventArgs e)
+        {
+            MainWorkSpace.IsTopMost = !MainWorkSpace.IsTopMost;
         }
     }
 }

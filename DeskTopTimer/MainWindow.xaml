@@ -49,7 +49,10 @@
         <ContextMenu>
             <MenuItem Command="{Binding OpenSettingCommand}" Header="打开设置" />
             <MenuItem Command="{Binding CleanDirCommand}" Header="清理图片缓存" />
-            <MenuItem Command="{Binding CollectCurrentBackCommand}" Header="收藏当前背景" />
+            <MenuItem
+                Command="{Binding CollectCurrentBackCommand}"
+                Header="收藏当前背景"
+                Visibility="{Binding IsBackgroundUsingVideo, Converter={StaticResource bool2RVisi}, UpdateSourceTrigger=PropertyChanged}" />
             <MenuItem
                 Command="{Binding INeedSeseImmediately}"
                 Header="立即色色"
@@ -105,7 +108,7 @@
                 </MenuItem.Header>
             </MenuItem>
 
-            <MenuItem x:Name="TopMostMenu">
+            <MenuItem x:Name="TopMostMenu" Click="TopMostMenu_Click">
                 <MenuItem.Header>
                     <StackPanel DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type MenuItem}}, Path=DataContext}" Orientation="Horizontal">
                         <CheckBox
@@ -435,7 +438,6 @@
                 Panel.ZIndex="0"
                 Background="Transparent"
                 ClipToBounds="True"
-                IsMuted="{Binding IsVedioMute}"
                 LoadedBehavior="Play"
                 RenderOptions.BitmapScalingMode="HighQuality"
                 RenderOptions.CacheInvalidationThresholdMaximum="16"

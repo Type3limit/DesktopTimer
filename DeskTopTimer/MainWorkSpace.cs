@@ -28,7 +28,7 @@ namespace DeskTopTimer
             {
                 if (familyNames.TryGetValue(XmlLanguage.GetLanguage("zh-cn"), out var chineseFontName))
                 {
-                   return chineseFontName;
+                    return chineseFontName;
                 }
             }
             return familyNames.FirstOrDefault().Value;
@@ -75,11 +75,13 @@ namespace DeskTopTimer
                 SetProperty(ref isBackgroundUsingVideo, value);
                 if (value)
                 {
-                    CloseSese();
+
+
                     if (String.IsNullOrEmpty(CurrentBackgroundVideoPath))
                         VideoPathDir = VideoPathDir;
                     else
                         CurrentBackgroundVideoPath = CurrentBackgroundVideoPath;
+                    CloseSese();
                 }
                 else
                 {
@@ -89,6 +91,7 @@ namespace DeskTopTimer
                     StartSeSeCacheThread();
                     StartSeSePreviewThread();
                 }
+
             }
 
         }
@@ -227,9 +230,20 @@ namespace DeskTopTimer
         public bool IsVideoMute
         {
             get => isVideoMute;
-            set => SetProperty(ref isVideoMute, value);
+            set
+            {
+                if (value)
+                {
+                    originVolume = videoVolume;
+                    VideoVolume = 0;
+                }
+                else
+                {
+                    VideoVolume = originVolume;
+                }
+                SetProperty(ref isVideoMute, value);
+            }
         }
-
         private double videoVolume = 1d;
         public double VideoVolume
         {
@@ -338,8 +352,9 @@ namespace DeskTopTimer
         private Color timeFontColor = Colors.White;
         public Color TimeFontColor
         {
-            get=> timeFontColor;
-            set{
+            get => timeFontColor;
+            set
+            {
                 SetProperty(ref timeFontColor, value);
                 OnPropertyChanged("TimeFontBrush");
             }
@@ -347,14 +362,15 @@ namespace DeskTopTimer
 
         public Brush TimeFontBrush
         {
-            get=> new SolidColorBrush(TimeFontColor);
+            get => new SolidColorBrush(TimeFontColor);
         }
 
         private Color weekendFontColor = Colors.White;
         public Color WeekendFontColor
         {
-            get=> weekendFontColor;
-            set {
+            get => weekendFontColor;
+            set
+            {
                 SetProperty(ref weekendFontColor, value);
                 OnPropertyChanged("WeekendFontBrush");
             }
@@ -362,21 +378,21 @@ namespace DeskTopTimer
 
         public Brush WeekendFontBrush
         {
-            get=> new SolidColorBrush(WeekendFontColor);
+            get => new SolidColorBrush(WeekendFontColor);
         }
 
         private int timeCenterFontSize = 20;
         public int TimeCenterFontSize
         {
-            get=>timeCenterFontSize ;
-            set=>SetProperty(ref timeCenterFontSize, value);
+            get => timeCenterFontSize;
+            set => SetProperty(ref timeCenterFontSize, value);
         }
-        
+
         private int weekendCenterFontSize = 12;
         public int WeekendCenterFontSize
         {
-            get=>weekendCenterFontSize;
-            set=>SetProperty(ref weekendCenterFontSize, value);
+            get => weekendCenterFontSize;
+            set => SetProperty(ref weekendCenterFontSize, value);
         }
 
 
@@ -403,7 +419,8 @@ namespace DeskTopTimer
 
         private List<string> LocalFiles = new List<string>();
         ManualResetEvent PreviewResetEvent = new ManualResetEvent(true);
-        BlockingCollection<Tuple<BitmapImage, string>> SeSeCache = new BlockingCollection<Tuple<BitmapImage, string>>(20);
+        object locker = new object();
+        Queue<Tuple<BitmapImage, string>>? SeSeCache = new Queue<Tuple<BitmapImage, string>>(20);
 
         List<string> CurrentRecord = new List<string>();
         long CacheCount = 0;
@@ -427,11 +444,12 @@ namespace DeskTopTimer
             timer.Interval = 1000;
             timer.Elapsed += Timer_Elapsed;
             timer.Start();
-            Init();
         }
         #endregion
 
         #region delegate
+
+        double originVolume = 0d;
         Stopwatch? sw = null;
         string[] Day = new string[] { "星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六" };
         private void Timer_Elapsed(object? sender, ElapsedEventArgs e)
@@ -567,6 +585,7 @@ namespace DeskTopTimer
         {
             get => muteVideoCommand ?? (muteVideoCommand = new RelayCommand(() =>
                 {
+
                     IsVideoMute = !IsVideoMute;
                 }));
         }
@@ -575,48 +594,7 @@ namespace DeskTopTimer
 
         #region private Methods
 
-        private void Init()
-        {
-            var curConfig = JsonConvert.DeserializeObject<Configure>(File.ReadAllText(FileMapper.ConfigureJson));
-            if (curConfig == null)
-            {
-                WriteCurrentSettingToJson();
-            }
-            else
-            {
-                WindowWidth = curConfig.windowWidth.Value;
-                WindowHeight = curConfig.windowHeight.Value;
-                LocalFileDir = curConfig.localFilePath;
-                BackgroundImageOpacity = curConfig.backgroundImgOpacity.Value;
-                IsOnlineSeSeMode = curConfig.isOnlineSeSeMode.Value;
-                CurrentSeSeApi = curConfig.currentSeSeApi;
-                MaxCacheCount = curConfig.maxCacheCount.Value;
-                MaxSeSeCount = curConfig.flushTime.Value;
-            }
 
-            //CacheResetSemaphore = new Semaphore((int)MaxCacheCount - 1, (int)MaxCacheCount);
-
-            SeSeApis = new List<string>()
-            {
-                WebRequestsTool.seseUrlLevel1,
-                 WebRequestsTool.seseUrlLevel2,
-                  WebRequestsTool.seseUrlLevel3,
-
-                  WebRequestsTool.mcUrl,
-                  WebRequestsTool.toubieUrl,
-
-                   //WebRequestsTool.pixivGetUrl,
-            };
-            if (!SeSeApis.Contains(CurrentSeSeApi))
-                SeSeApis.Add(CurrentSeSeApi);
-
-            SeletctedSeSe = CurrentSeSeApi;
-            GetAllFont();
-            ClearCacheDir();
-
-            StartSeSeCacheThread();
-            StartSeSePreviewThread();
-        }
 
         private void ClearCacheDir()
         {
@@ -625,7 +603,7 @@ namespace DeskTopTimer
 
                 if (!Directory.Exists(FileMapper.PictureCacheDir))
                     return;
-            Directory.EnumerateFiles(FileMapper.PictureCacheDir, "*.jpg;*.jpeg;*.bmp;*.png;", SearchOption.AllDirectories).ToList().ForEach(o =>
+            MyDirectory.GetFiles(FileMapper.PictureCacheDir, @"\.png$|\.jpg$|\.jpeg$|\.bmp$", SearchOption.AllDirectories).ToList().ForEach(o =>
              {
                  if (File.Exists(o))
                      File.Delete(o);
@@ -655,6 +633,18 @@ namespace DeskTopTimer
             curConfig.currentSeSeApi = CurrentSeSeApi;
             curConfig.maxCacheCount = MaxCacheCount;
             curConfig.flushTime = MaxSeSeCount;
+            curConfig.isTopmost = IsTopMost;
+            curConfig.isUsingVideoBackGround = IsBackgroundUsingVideo;
+            curConfig.timeFontIndex = FontFamilies.IndexOf(SelectedFontFamily) < 0 ? 0 : FontFamilies.IndexOf(SelectedFontFamily);
+            curConfig.weekendFontIndex = FontFamilies.IndexOf(SelectedWeekendFontFamily) < 0 ? 0 : FontFamilies.IndexOf(SelectedWeekendFontFamily);
+            curConfig.videoDir = VideoPathDir;
+            curConfig.selectedVideoPath = CurrentBackgroundVideoPath;
+            curConfig.timeFontSize = TimeCenterFontSize;
+            curConfig.weekendFontSize = WeekendCenterFontSize;
+            curConfig.weekendFontColor = ColorToStringHelper.HexConverter(WeekendFontColor);
+            curConfig.timeFontColor = ColorToStringHelper.HexConverter(TimeFontColor);
+            curConfig.isLoopPlay = IsLoopPlay;
+            curConfig.volume = IsVideoMute ? originVolume : VideoVolume;
             var str = JsonConvert.SerializeObject(curConfig);
             File.WriteAllText(FileMapper.ConfigureJson, str);
         }
@@ -676,12 +666,19 @@ namespace DeskTopTimer
                         _IsWritingNow = true;
                         Tuple<BitmapImage, string>? curUrl = null;
 
-                        if (SeSeCache.TryTake(out curUrl))
+                        lock (locker)
                         {
-                            CurrentPreviewFile = curUrl.Item2;
-                            CurrentSePic = curUrl.Item1;
-                            //CacheResetSemaphore?.Release(1);
+                            if (SeSeCache==null||SeSeCache.Count <= 0)
+                                continue;
+                            curUrl = SeSeCache.Dequeue();
+                            if ((curUrl != null))
+                            {
+                                CurrentPreviewFile = curUrl.Item2;
+                                CurrentSePic = curUrl.Item1;
+                                //CacheResetSemaphore?.Release(1);
+                            }
                         }
+
                         PreviewResetEvent.Reset();
                         _IsWritingNow = false;
                     }
@@ -701,7 +698,7 @@ namespace DeskTopTimer
 
         private void StartSeSeCacheThread()
         {
-            SeSeCache = new BlockingCollection<Tuple<BitmapImage, string>>((int)MaxCacheCount);
+            SeSeCache = new Queue<Tuple<BitmapImage, string>>((int)MaxCacheCount);
             int localCount = 0;
             Task.Run(() =>
             {
@@ -731,7 +728,11 @@ namespace DeskTopTimer
                                     {
                                         CurrentRecord.Add(str);
                                         CacheCount++;
-                                        SeSeCache?.Add(new Tuple<BitmapImage, string>(ImageTool.GetImage(str), str));
+                                        lock (locker)
+                                        {
+                                            SeSeCache?.Enqueue(new Tuple<BitmapImage, string>(ImageTool.GetImage(str), str));
+                                        }
+
                                     }
                                     Debug.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次涩涩{SeletctedSeSe}");
                                     break;
@@ -745,7 +746,11 @@ namespace DeskTopTimer
                                     {
                                         CurrentRecord.Add(res.urls.First().Value);
                                         CacheCount++;
-                                        SeSeCache?.Add(new Tuple<BitmapImage, string>(ImageTool.GetImage(res.urls.First().Value), res.urls.First().Value));
+                                        lock (locker)
+                                        {
+                                            SeSeCache?.Enqueue(new Tuple<BitmapImage, string>(ImageTool.GetImage(res.urls.First().Value), res.urls.First().Value));
+                                        }
+
                                     }
 
                                     Debug.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次P站涩涩{SeletctedSeSe}");
@@ -762,7 +767,11 @@ namespace DeskTopTimer
                         var currentFile = LocalFiles[localCount];
                         if (File.Exists(currentFile))
                         {
-                            SeSeCache.Add(new Tuple<BitmapImage, string>(ImageTool.GetImage(currentFile), currentFile));
+                            lock (locker)
+                            {
+                                SeSeCache?.Enqueue(new Tuple<BitmapImage, string>(ImageTool.GetImage(currentFile), currentFile));
+                            }
+
                         }
                     };
                     currentAction();
@@ -834,6 +843,70 @@ namespace DeskTopTimer
         #endregion
 
         #region Public methods
+        public void Init()
+        {
+            var curConfig = JsonConvert.DeserializeObject<Configure>(File.ReadAllText(FileMapper.ConfigureJson));
+            if (curConfig == null)
+            {
+                WriteCurrentSettingToJson();
+                curConfig = JsonConvert.DeserializeObject<Configure>(File.ReadAllText(FileMapper.ConfigureJson));
+            }
+            else
+            {
+                WindowWidth = curConfig.windowWidth.Value;
+                WindowHeight = curConfig.windowHeight.Value;
+                LocalFileDir = curConfig.localFilePath;
+                BackgroundImageOpacity = curConfig.backgroundImgOpacity.Value;
+                IsOnlineSeSeMode = curConfig.isOnlineSeSeMode.Value;
+                CurrentSeSeApi = curConfig.currentSeSeApi;
+                MaxCacheCount = curConfig.maxCacheCount.Value;
+                MaxSeSeCount = curConfig.flushTime.Value;
+                IsTopMost = curConfig.isTopmost;
+            }
+            //CacheResetSemaphore = new Semaphore((int)MaxCacheCount - 1, (int)MaxCacheCount);
+
+            SeSeApis = new List<string>()
+            {
+                WebRequestsTool.seseUrlLevel1,
+                 WebRequestsTool.seseUrlLevel2,
+                  WebRequestsTool.seseUrlLevel3,
+
+                  WebRequestsTool.mcUrl,
+                  WebRequestsTool.toubieUrl,
+
+                   //WebRequestsTool.pixivGetUrl,
+            };
+            if (!SeSeApis.Contains(CurrentSeSeApi))
+                SeSeApis.Add(CurrentSeSeApi);
+
+            SeletctedSeSe = CurrentSeSeApi;
+            GetAllFont();
+            SelectedFontFamily = FontFamilies.ElementAt(curConfig.timeFontIndex);
+            SelectedWeekendFontFamily = FontFamilies.ElementAt(curConfig.weekendFontIndex);
+            TimeCenterFontSize = curConfig.timeFontSize;
+            WeekendCenterFontSize = curConfig.weekendFontSize;
+            TimeFontColor = ColorToStringHelper.HexConverter(curConfig.timeFontColor);
+            WeekendFontColor = ColorToStringHelper.HexConverter(curConfig.weekendFontColor);
+            ClearCacheDir();
+            IsBackgroundUsingVideo = curConfig.isUsingVideoBackGround;
+            videoPathDir = curConfig.videoDir;
+            BackgroundVideos = ReadDestVideo(videoPathDir);
+            IsLoopPlay = curConfig.isLoopPlay;
+            VideoVolume = curConfig.volume;
+            if (!IsBackgroundUsingVideo)
+            {
+                StartSeSeCacheThread();
+                StartSeSePreviewThread();
+
+            }
+            else
+            {
+                CurrentBackgroundVideoPath = curConfig.selectedVideoPath;
+
+
+            }
+        }
+
         public async Task<bool> CloseSese()
         {
 
@@ -842,15 +915,12 @@ namespace DeskTopTimer
             CacheCount = 0;
             CurrentRecord.Clear();
             _shouldStopSese = true;
-            if (_IsWritingNow)
+            lock (locker)
             {
-                if (SeSeCache?.Count > 0)
-                    SeSeCache?.Take();
-
+                SeSeCache?.Clear();
+                SeSeCache = null;
             }
-            while (_IsWritingNow) ;
-            SeSeCache?.Dispose();
-            SeSeCache = null;
+
             return await Task.Run(() =>
             {
                 while (!_IsCacheStoped || !_IsPrviewStoped)
