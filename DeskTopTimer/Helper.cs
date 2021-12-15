@@ -17,6 +17,9 @@ using System.Windows.Media.Imaging;
 using Newtonsoft.Json;
 namespace DeskTopTimer
 {
+    /// <summary>
+    /// Bitmap 转为BitmapImage
+    /// </summary>
     public class BitmapToImageSourceHelper
     {
         /// <summary>
@@ -50,7 +53,9 @@ namespace DeskTopTimer
             }
         }
     }
-
+    /// <summary>
+    /// 枚举文件
+    /// </summary>
     public static class MyDirectory
     {   // Regex version
         public static IEnumerable<string> GetFiles(string path,
@@ -73,7 +78,9 @@ namespace DeskTopTimer
                           Directory.EnumerateFiles(path, searchPattern, searchOption));
         }
     }
-
+    /// <summary>
+    /// 图像相关处理
+    /// </summary>
     public class ImageTool
     {
         public struct Dpi
@@ -236,7 +243,9 @@ namespace DeskTopTimer
 
 
     }
-
+    /// <summary>
+    /// 设置类定义
+    /// </summary>
     public class Configure
     {
         public bool? isOnlineSeSeMode { set;get;}
@@ -279,7 +288,9 @@ namespace DeskTopTimer
 
         public double volume { set;get;} =1d;
     }
-
+    /// <summary>
+    /// 通用方法帮助类
+    /// </summary>
     public static class CommonFuncTool
     {
         /// <summary>
@@ -337,9 +348,14 @@ namespace DeskTopTimer
             }
         }
     }
-
+    /// <summary>
+    /// 路径定义
+    /// </summary>
     public static class FileMapper
     {
+        /// <summary>
+        /// 图片缓存目录
+        /// </summary>
         public static string PictureCacheDir
         {
             get
@@ -350,7 +366,9 @@ namespace DeskTopTimer
                 return currentDir;
             }
         }
-
+        /// <summary>
+        /// 视频缓存目录
+        /// </summary>
         public static string VideoCacheDir
         {
             get
@@ -362,6 +380,9 @@ namespace DeskTopTimer
             }
         }
       
+        /// <summary>
+        /// 普通背景目录
+        /// </summary>
         public static string NormalSeSePictureDir
         {
             get
@@ -372,7 +393,9 @@ namespace DeskTopTimer
                 return cur;
             }
         }
-
+        /// <summary>
+        /// 特定的背景目录
+        /// </summary>
         public static string PixivSeSePictureDir
         {
             get
@@ -383,7 +406,9 @@ namespace DeskTopTimer
                 return cur;
             }
         }
-
+        /// <summary>
+        /// 本地背景目录
+        /// </summary>
         public static string LocalSeSePictureDir
         {
             get
@@ -394,7 +419,9 @@ namespace DeskTopTimer
                 return currentFile;
             }
         }
-
+        /// <summary>
+        /// 收藏目录
+        /// </summary>
         public static string LocalCollectionPictureDir
         {
              get
@@ -405,7 +432,9 @@ namespace DeskTopTimer
                   return currentFile; 
              }
         }
-
+        /// <summary>
+        /// json配置文件路径
+        /// </summary>
         public static string ConfigureJson
         {
             get
@@ -416,7 +445,9 @@ namespace DeskTopTimer
                 return currentFile;
             }
         }
-
+        /// <summary>
+        /// 模块json配置路径
+        /// </summary>
         public static string ModelsJson
         {
             get
@@ -428,7 +459,9 @@ namespace DeskTopTimer
             }
         }
     }
-
+    /// <summary>
+    /// 颜色转字符、字符转颜色
+    /// </summary>
     public static class ColorToStringHelper
     {
         public static String HexConverter(System.Windows.Media.Color c, bool UsingAlpha = true)
@@ -478,6 +511,24 @@ namespace DeskTopTimer
             return "RGB(" + c.R.ToString() + "," + c.G.ToString() + "," + c.B.ToString() + ")";
         }
 
+    }
+    /// <summary>
+    /// 获取字体的本地化名称
+    /// </summary>
+    public static class FontGetLocalizeName
+    {
+        public static string GetLocalizedName(this System.Windows.Media.FontFamily font)
+        {
+            LanguageSpecificStringDictionary familyNames = font.FamilyNames;
+            if (familyNames.ContainsKey(System.Windows.Markup.XmlLanguage.GetLanguage("zh-cn")))
+            {
+                if (familyNames.TryGetValue(System.Windows.Markup.XmlLanguage.GetLanguage("zh-cn"), out var chineseFontName))
+                {
+                    return chineseFontName;
+                }
+            }
+            return familyNames.FirstOrDefault().Value;
+        }
     }
 
 }
