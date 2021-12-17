@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace DeskTopTimer.Converter
@@ -86,6 +87,43 @@ namespace DeskTopTimer.Converter
         }
     }
 
+
+    public class WebSiteToVisiableConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if(values[0] == null || values[0] == DependencyProperty.UnsetValue || values[1] == null || values[1] == DependencyProperty.UnsetValue)
+                return Binding.DoNothing;
+            var IsWebSiteVisiable = (bool)(values[0]);
+            var IsObjectVisiable= (bool)(values[1]);
+            return IsWebSiteVisiable?Visibility.Collapsed:IsObjectVisiable?Visibility.Visible:Visibility.Collapsed;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+           return new object[]{ Binding.DoNothing };
+        }
+    }
+
+    public class WebSiteToReverseVisiableConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            
+            if (values[0] == null||values[0]== DependencyProperty.UnsetValue || values[1] == null || values[1] == DependencyProperty.UnsetValue)
+                return Binding.DoNothing;
+            var IsWebSiteVisiable = (bool)(values[0]);
+            var IsObjectVisiable = (bool)(values[1]);
+            return IsWebSiteVisiable ? Visibility.Collapsed : IsObjectVisiable ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            return new object[] { Binding.DoNothing };
+        }
+    }
+
+
     public class FontNameConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -102,4 +140,101 @@ namespace DeskTopTimer.Converter
             return Binding.DoNothing;
         }
     }
-}
+
+
+    public class CtrlKeyToVisi : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var curModifyer = (ModifierKeys)value;
+            return curModifyer.HasFlag(ModifierKeys.Control) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+    public class ShiftKeyToVisi : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var curModifyer = (ModifierKeys)value;
+            return curModifyer.HasFlag(ModifierKeys.Shift) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+    public class AltKeyToVisi : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var curModifyer = (ModifierKeys)value;
+            return curModifyer.HasFlag(ModifierKeys.Alt) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+    public class WinKeyToVisi : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var curModifyer = (ModifierKeys)value;
+            return curModifyer.HasFlag(ModifierKeys.Windows) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
+
+
+    public class KeyToString : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var curKey = (Key)value;
+            if (curKey != Key.None)
+            {
+                if (curKey == Key.OemOpenBrackets)
+                    return "[";
+                else if (curKey == Key.OemCloseBrackets)
+                    return "]";
+                else if (curKey == Key.Add)
+                    return "+";
+                else if (curKey == Key.Subtract)
+                    return "-";
+                else if (curKey == Key.OemSemicolon)
+                    return ";";
+                else if (curKey == Key.OemQuotes)
+                    return ":";
+                else if (curKey == Key.OemQuestion)
+                    return "?";
+                else if (curKey == Key.Separator)
+                    return "|";
+                else if (curKey == Key.OemComma)
+                    return ",";
+                else if (curKey == Key.OemPeriod)
+                    return ".";
+                else
+                    return Enum.GetName(typeof(Key), curKey);
+            }
+
+            return string.Empty;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        } }
+    }

@@ -284,10 +284,40 @@ namespace DeskTopTimer
 
         public string? selectedVideoPath { set; get; }
 
+        public string? WebSiteUrl { set;get;}
+
+        public bool IsWebViewVisiable { set;get;}
+
         public bool isLoopPlay { set;get;}=true;
 
         public double volume { set;get;} =1d;
     }
+
+    /// <summary>
+    /// 网络地址记录
+    /// </summary>
+    public class WebUrlRecords
+    {
+        public List<string>? webUrls{set;get;} 
+    }
+
+    /// <summary>
+    /// string 唯一
+    /// </summary>
+    class StringDistinctItemComparer : IEqualityComparer<string>
+    {
+
+        public bool Equals(string x, string y)
+        {
+            return x == y;
+        }
+
+        public int GetHashCode(string obj)
+        {
+            return obj.GetHashCode();
+        }
+    }
+
     /// <summary>
     /// 通用方法帮助类
     /// </summary>
@@ -456,6 +486,81 @@ namespace DeskTopTimer
                 if (!File.Exists(currentFile))
                     File.Create(currentFile).Close();
                 return currentFile;
+            }
+        }
+
+        /// <summary>
+        /// 网址记录json路径
+        /// </summary>
+        public static string WebSiteJson
+        {
+            get
+            {
+                string currentFile = Path.Combine(System.Environment.CurrentDirectory, "Webs.Json");
+                if (!File.Exists(currentFile))
+                    File.Create(currentFile).Close();
+                return currentFile;
+            }
+        }
+
+        /// <summary>
+        /// CefBrowser缓存数据根目录
+        /// </summary>
+        public static string CefBrowserDataDir
+        {
+            get
+            {
+                string cefBrowserData = Path.Combine(System.Environment.CurrentDirectory, @"CefBrowserData\");
+                if (!Directory.Exists(cefBrowserData))
+                {
+                    Directory.CreateDirectory(cefBrowserData);
+                }
+                return cefBrowserData;
+            }
+        }
+        /// <summary>
+        /// 网络日志目录
+        /// </summary>
+        public static string CefBrowserLogPath
+        {
+            get
+            {
+                string cefBrowserLogPath = Path.Combine(CefBrowserDataDir, "CefBrowser.log");
+                if (!File.Exists(cefBrowserLogPath))
+                {
+                    File.Create(cefBrowserLogPath);
+                }
+                return cefBrowserLogPath;
+            }
+        }
+        /// <summary>
+        /// 网络缓存目录
+        /// </summary>
+        public static string CefBrowserCacheDir
+        {
+            get
+            {
+                string cefBrowserCache = Path.Combine(CefBrowserDataDir, @"Cache\");
+                if (!Directory.Exists(cefBrowserCache))
+                {
+                    Directory.CreateDirectory(cefBrowserCache);
+                }
+                return cefBrowserCache;
+            }
+        }
+        /// <summary>
+        /// 网络用户信息缓存
+        /// </summary>
+        public static string CefBrowserUserDataDir
+        {
+            get
+            {
+                string cefBrowserUserData = Path.Combine(CefBrowserDataDir, @"UserData\");
+                if (!Directory.Exists(cefBrowserUserData))
+                {
+                    Directory.CreateDirectory(cefBrowserUserData);
+                }
+                return cefBrowserUserData;
             }
         }
     }

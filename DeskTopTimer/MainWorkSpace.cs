@@ -19,7 +19,7 @@ using System.Windows.Markup;
 
 namespace DeskTopTimer
 {
-   
+
     internal class MainWorkSpace : ObservableObject
     {
         #region PerformRegion
@@ -47,10 +47,29 @@ namespace DeskTopTimer
             set => SetProperty(ref _currentWeekTimeStr, value);
         }
 
+        private List<HotKey> shotKeys = new List<HotKey>();
+        /// <summary>
+        /// 快捷键描述
+        /// </summary>
+        public List<HotKey> ShotKeys
+        {
+            get=> shotKeys;
+            set=>SetProperty(ref shotKeys, value);
+        }
+
         #endregion
 
         #region BackGroundControl
 
+        private bool isTimerBorderVisiable = true;
+        /// <summary>
+        /// 标识是否显示中心的时钟
+        /// </summary>
+        public bool IsTimerBorderVisiable
+        {
+            get => isTimerBorderVisiable;
+            set => SetProperty(ref isTimerBorderVisiable, value);
+        }
 
         private bool isBackgroundUsingVideo = false;
         /// <summary>
@@ -94,6 +113,84 @@ namespace DeskTopTimer
             get => backgroundImageOpacity;
             set => SetProperty(ref backgroundImageOpacity, value);
         }
+
+        #region WebControl
+        private bool isWebViewVisible = false;
+        /// <summary>
+        /// 标识网页是否可见
+        /// </summary>
+        public bool IsWebViewVisible
+        {
+            get => isWebViewVisible;
+            set
+            {
+                if (isWebViewVisible == value)
+                    return;
+                if (value)
+                {
+                    if (IsBackgroundUsingVideo)
+                    {
+                        BackgroundVideoChanged?.Invoke("");
+                    }
+                    else
+                    {
+                        CloseSese();
+                        CurrentWebAddress = CurrentWebAddress;
+                    }
+                }
+                else
+                {
+                    if (IsBackgroundUsingVideo)
+                    {
+                        BackgroundVideoChanged?.Invoke(CurrentBackgroundVideoPath);
+                    }
+                    else
+                    {
+                        CloseSese();
+                        _shouldStopSese = false;
+                        StartSeSeCacheThread();
+                        StartSeSePreviewThread();
+                    }
+                }
+                SetProperty(ref isWebViewVisible, value);
+            }
+        }
+
+        private List<string> webAddresses = new List<string>();
+        /// <summary>
+        /// 默认网站地址记录
+        /// </summary>
+        public List<string> WebAddresses
+        {
+            get => webAddresses;
+            set => SetProperty(ref webAddresses, value);
+        }
+
+        private string currentWebAddress = string.Empty;
+        /// <summary>
+        /// 当前开启的网页
+        /// </summary>
+        public string CurrentWebAddress
+        {
+            get => currentWebAddress;
+            set
+            {
+                SetProperty(ref currentWebAddress, value);
+                WebSiteChanged?.Invoke(value);
+            }
+
+        }
+
+        private List<string> histories = new List<string>();
+        /// <summary>
+        /// 历史记录
+        /// </summary>
+        public List<string> Histories
+        {
+            get=>histories;
+            set => SetProperty(ref histories, value);
+        }
+        #endregion
 
         #region ImageControl
 
@@ -367,6 +464,21 @@ namespace DeskTopTimer
             }
         }
 
+        private bool isOpenWebUrlFlyout = false;
+        /// <summary>
+        /// 标识是否应该打开网址窗体
+        /// </summary>
+        public bool IsOpenWebUrlFlyOut
+        {
+            get => isOpenWebUrlFlyout;
+            set {
+                if(!IsWebViewVisible && value)
+                    return;
+                SetProperty(ref isOpenWebUrlFlyout, value); 
+                }
+        }
+
+
         private bool isTopMost = true;
         /// <summary>
         /// 标识当前窗口是否置顶
@@ -377,6 +489,8 @@ namespace DeskTopTimer
             set => SetProperty(ref isTopMost, value);
 
         }
+
+
 
         #endregion
 
@@ -519,6 +633,9 @@ namespace DeskTopTimer
         /// 标识缓存线程是否已经停止
         /// </summary>
         bool _IsCacheStoped = false;
+
+        bool _IsPreviewStarted = false;
+        bool _IsCacheStarted = false;
         /// <summary>
         /// 本地文件记录
         /// </summary>
@@ -602,8 +719,8 @@ namespace DeskTopTimer
             {
                 sw?.Stop();
                 Trace.WriteLine($"距离上一次触发刷新过去了{sw?.ElapsedMilliseconds}ms");
-                if(!IsBackgroundUsingVideo)
-                      PreviewResetEvent.Set();
+                if (!IsBackgroundUsingVideo)
+                    PreviewResetEvent.Set();
                 seseCount = 0;
                 Trace.WriteLine($"{DateTime.Now.ToLocalTime()}触发一次刷新");
             }
@@ -627,6 +744,8 @@ namespace DeskTopTimer
         /// </summary>
         public event ChangeVideoVolumnHandler? VideoVolumnChanged;
 
+        public delegate void ChangeWebSiteHandler(string url);
+        public event ChangeWebSiteHandler? WebSiteChanged;
 
         #endregion
 
@@ -756,6 +875,47 @@ namespace DeskTopTimer
                 }));
         }
 
+        ICommand? hideTimerCommand = null;
+        /// <summary>
+        /// 隐藏中心的border
+        /// </summary>
+        public ICommand HideTimerCommand
+        {
+            get => hideTimerCommand ?? (hideTimerCommand = new RelayCommand(() =>
+                  {
+                      IsTimerBorderVisiable = !IsTimerBorderVisiable;
+                  }));
+        }
+
+
+        ICommand? showWebUrlCommand = null;
+        /// <summary>
+        /// 显示网页设置
+        /// </summary>
+        public ICommand ShowWebUrlCommand
+        {
+            get => showWebUrlCommand ?? (showWebUrlCommand = new RelayCommand(() =>
+                {
+                    IsOpenWebUrlFlyOut = !IsOpenWebUrlFlyOut;
+                    }));
+        }
+
+        ICommand? recordHistoryCommand = null;
+        /// <summary>
+        /// 添加历史记录
+        /// </summary>
+        public ICommand RecordHistoryCommand
+        {
+            get=>recordHistoryCommand??(recordHistoryCommand = new RelayCommand<string>((str) => 
+            {
+                if(string.IsNullOrEmpty(str))
+                    return;
+                var currentList = new List<string>(Histories);
+                currentList.Add(str);
+                Histories = new List<string>(currentList.Distinct(new StringDistinctItemComparer()));
+            }));
+        }
+
         #endregion
 
         #region private Methods
@@ -818,6 +978,8 @@ namespace DeskTopTimer
             curConfig.timeFontColor = ColorToStringHelper.HexConverter(TimeFontColor);
             curConfig.isLoopPlay = IsLoopPlay;
             curConfig.volume = IsVideoMute ? originVolume : VideoVolume;
+            curConfig.IsWebViewVisiable = IsWebViewVisible;
+            curConfig.WebSiteUrl = CurrentWebAddress;
             var str = JsonConvert.SerializeObject(curConfig);
             File.WriteAllText(FileMapper.ConfigureJson, str);
         }
@@ -826,10 +988,14 @@ namespace DeskTopTimer
         /// </summary>
         private void StartSeSePreviewThread()
         {
+            if (_IsPreviewStarted)
+                return;
             Task.Run(() =>
             {
+                Trace.WriteLine($"[{DateTime.Now.ToLocalTime()}]开启预览控制线程");
                 try
                 {
+                    _IsPreviewStarted = true;
                     while (!_shouldStopSese)
                     {
                         _IsPrviewStoped = false;
@@ -843,7 +1009,7 @@ namespace DeskTopTimer
 
                         lock (locker)
                         {
-                            if (SeSeCache==null||SeSeCache.Count <= 0)
+                            if (SeSeCache == null || SeSeCache.Count <= 0)
                                 continue;
                             curUrl = SeSeCache.Dequeue();
                             if ((curUrl != null))
@@ -866,6 +1032,7 @@ namespace DeskTopTimer
                 finally
                 {
                     _IsPrviewStoped = true;
+                    _IsPreviewStarted = false;
                 }
 
             });
@@ -877,92 +1044,109 @@ namespace DeskTopTimer
         {
             SeSeCache = new Queue<Tuple<BitmapImage, string>>((int)MaxCacheCount);
             int localCount = 0;
+            if (_IsCacheStarted)
+                return;
             Task.Run(() =>
             {
-                while (!_shouldStopSese)
+                Trace.WriteLine($"[{DateTime.Now.ToLocalTime()}]开启缓存控制线程");
+                _IsCacheStarted = true;
+                try
                 {
-
-                    _IsCacheStoped = false;
-                    if (SeSeCache == null || SeSeCache.Count >= MaxCacheCount)
-                        continue;
-                    _IsWritingNow = true;
-                    Action currentAction = IsOnlineSeSeMode ?
-                    async () =>
+                    while (!_shouldStopSese)
                     {
-                        string currentFileName = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss_FFFF");
-                        switch (SeletctedSeSe)
+
+                        _IsCacheStoped = false;
+                        if (SeSeCache == null || SeSeCache.Count >= MaxCacheCount)
+                            continue;
+                        _IsWritingNow = true;
+                        Action currentAction = IsOnlineSeSeMode ?
+                        async () =>
                         {
-                            case WebRequestsTool.seseUrlLevel1:
-                            case WebRequestsTool.seseUrlLevel2:
-                            case WebRequestsTool.seseUrlLevel3:
-
-                            case WebRequestsTool.mcUrl:
-                            case WebRequestsTool.toubieUrl:
-
-                                {
-                                    var str = await WebRequestsTool.RequestSeSePic(SeletctedSeSe, FileMapper.NormalSeSePictureDir, currentFileName);
-                                    if (File.Exists(str))
-                                    {
-                                        CurrentRecord.Add(str);
-                                        CacheCount++;
-                                        lock (locker)
-                                        {
-                                            SeSeCache?.Enqueue(new Tuple<BitmapImage, string>(ImageTool.GetImage(str), str));
-                                        }
-
-                                    }
-                                    Debug.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次涩涩{SeletctedSeSe}");
-                                    break;
-                                }
-                            case WebRequestsTool.pixivGetUrl:
-                                {
-                                    var res = await WebRequestsTool.RequestGetModePixivSeSePic(SeletctedSeSe, FileMapper.PixivSeSePictureDir, currentFileName);
-                                    if (res == null)
-                                        break;
-                                    if (File.Exists(res.urls.First().Value))
-                                    {
-                                        CurrentRecord.Add(res.urls.First().Value);
-                                        CacheCount++;
-                                        lock (locker)
-                                        {
-                                            SeSeCache?.Enqueue(new Tuple<BitmapImage, string>(ImageTool.GetImage(res.urls.First().Value), res.urls.First().Value));
-                                        }
-
-                                    }
-
-                                    Debug.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次P站涩涩{SeletctedSeSe}");
-                                    break;
-                                }
-                        }
-
-                    }
-                    :
-                    () =>
-                    {
-                        if (localCount > LocalFiles.Count)
-                            localCount = 0;
-                        var currentFile = LocalFiles[localCount];
-                        if (File.Exists(currentFile))
-                        {
-                            lock (locker)
+                            string currentFileName = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss_FFFF");
+                            switch (SeletctedSeSe)
                             {
-                                SeSeCache?.Enqueue(new Tuple<BitmapImage, string>(ImageTool.GetImage(currentFile), currentFile));
-                                localCount++;
+                                case WebRequestsTool.seseUrlLevel1:
+                                case WebRequestsTool.seseUrlLevel2:
+                                case WebRequestsTool.seseUrlLevel3:
+
+                                case WebRequestsTool.mcUrl:
+                                case WebRequestsTool.toubieUrl:
+
+                                    {
+                                        var str = await WebRequestsTool.RequestSeSePic(SeletctedSeSe, FileMapper.NormalSeSePictureDir, currentFileName);
+                                        if (File.Exists(str))
+                                        {
+                                            CurrentRecord.Add(str);
+                                            CacheCount++;
+                                            lock (locker)
+                                            {
+                                                SeSeCache?.Enqueue(new Tuple<BitmapImage, string>(ImageTool.GetImage(str), str));
+                                            }
+
+                                        }
+                                        Debug.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次涩涩{SeletctedSeSe}");
+                                        break;
+                                    }
+                                case WebRequestsTool.pixivGetUrl:
+                                    {
+                                        var res = await WebRequestsTool.RequestGetModePixivSeSePic(SeletctedSeSe, FileMapper.PixivSeSePictureDir, currentFileName);
+                                        if (res == null)
+                                            break;
+                                        if (File.Exists(res.urls.First().Value))
+                                        {
+                                            CurrentRecord.Add(res.urls.First().Value);
+                                            CacheCount++;
+                                            lock (locker)
+                                            {
+                                                SeSeCache?.Enqueue(new Tuple<BitmapImage, string>(ImageTool.GetImage(res.urls.First().Value), res.urls.First().Value));
+                                            }
+
+                                        }
+
+                                        Debug.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次P站涩涩{SeletctedSeSe}");
+                                        break;
+                                    }
                             }
 
                         }
-                    };
-                    currentAction();
-                    if (CurrentSePic == null)
-                    {
-                        INeedSeseImmediately.Execute(null);
+                        :
+                        () =>
+                        {
+                            if (localCount > LocalFiles.Count)
+                                localCount = 0;
+                            var currentFile = LocalFiles[localCount];
+                            if (File.Exists(currentFile))
+                            {
+                                lock (locker)
+                                {
+                                    SeSeCache?.Enqueue(new Tuple<BitmapImage, string>(ImageTool.GetImage(currentFile), currentFile));
+                                    localCount++;
+                                }
+
+                            }
+                        };
+                        currentAction();
+                        if (CurrentSePic == null)
+                        {
+                            INeedSeseImmediately.Execute(null);
+                        }
+                        _IsWritingNow = false;
+                        var SleepCount = Random.Shared.Next(500, 1000) % 1000;
+                        Thread.Sleep(SleepCount);
+                        AutoClean();
                     }
-                    _IsWritingNow = false;
-                    var SleepCount = Random.Shared.Next(500, 1000) % 1000;
-                    Thread.Sleep(SleepCount);
-                    AutoClean();
                 }
-                _IsCacheStoped = true;
+                catch (Exception ex)
+                {
+                    Trace.WriteLine(ex);
+
+                }
+                finally
+                {
+                    _IsCacheStoped = true;
+                    _IsCacheStarted = false;
+                }
+
             });
         }
         /// <summary>
@@ -1011,6 +1195,29 @@ namespace DeskTopTimer
             SelectedFontFamily = FontFamilies.FirstOrDefault();
             SelectedWeekendFontFamily = FontFamilies.FirstOrDefault();
         }
+        /// <summary>
+        /// 读入所有有记录的网站地址
+        /// </summary>
+        private void ReadWebSites()
+        {
+            var Webs = JsonConvert.DeserializeObject<WebUrlRecords>(File.ReadAllText(FileMapper.WebSiteJson));
+            if (Webs == null)
+            {
+                Webs = new WebUrlRecords();
+                Webs.webUrls = new List<string>();
+                Webs.webUrls.Add("https://hfiprogramming.github.io/mikutap/");
+                WriteWebSites();
+            }
+            WebAddresses = Webs.webUrls;
+        }
+        /// <summary>
+        /// 写入网站地址
+        /// </summary>
+        private void WriteWebSites()
+        {
+            var str = JsonConvert.SerializeObject(new WebUrlRecords() { webUrls = WebAddresses });
+            File.WriteAllText(FileMapper.ConfigureJson, str);
+        }
 
         #endregion
 
@@ -1054,7 +1261,12 @@ namespace DeskTopTimer
                 MaxCacheCount = curConfig.maxCacheCount.Value;
                 MaxSeSeCount = curConfig.flushTime.Value;
                 IsTopMost = curConfig.isTopmost;
+                IsWebViewVisible = curConfig.IsWebViewVisiable;
+                CurrentWebAddress = curConfig.WebSiteUrl;
             }
+            ReadWebSites();
+            if (string.IsNullOrEmpty(CurrentWebAddress))
+                CurrentWebAddress = WebAddresses.FirstOrDefault();
             //CacheResetSemaphore = new Semaphore((int)MaxCacheCount - 1, (int)MaxCacheCount);
 
             SeSeApis = new List<string>()
@@ -1085,20 +1297,24 @@ namespace DeskTopTimer
             BackgroundVideos = ReadDestVideo(videoPathDir);
             IsLoopPlay = curConfig.isLoopPlay;
             VideoVolume = curConfig.volume;
-            if (!IsBackgroundUsingVideo)
+            if (!IsWebViewVisible)
             {
-                StartSeSeCacheThread();
-                StartSeSePreviewThread();
+                if (!IsBackgroundUsingVideo)
+                {
+                    StartSeSeCacheThread();
+                    StartSeSePreviewThread();
 
-            }
-            else
-            {
-                if(!string.IsNullOrEmpty(curConfig.selectedVideoPath))
-                    CurrentBackgroundVideoPath = curConfig.selectedVideoPath;
-
+                }
                 else
-                    CurrentBackgroundVideoPath = BackgroundVideos.FirstOrDefault();
+                {
+                    if (!string.IsNullOrEmpty(curConfig.selectedVideoPath))
+                        CurrentBackgroundVideoPath = curConfig.selectedVideoPath;
+
+                    else
+                        CurrentBackgroundVideoPath = BackgroundVideos.FirstOrDefault();
+                }
             }
+
         }
         /// <summary>
         /// 关闭刷新、缓存线程
@@ -1122,6 +1338,7 @@ namespace DeskTopTimer
             {
                 while (!_IsCacheStoped || !_IsPrviewStoped)
                     Thread.Sleep(1);
+                Trace.WriteLine($"[{DateTime.Now.ToLocalTime()}]已关闭预览和缓存线程");
                 return true;
             });
 
@@ -1154,7 +1371,14 @@ namespace DeskTopTimer
             CacheCount -= RemoveList.Count;
             Trace.WriteLine($"自动清理了{RemoveList.Count}个本地缓存文件,当前缓存数{CurrentRecord.Count}");
         }
-
+        /// <summary>
+        /// 设置快捷键描述
+        /// </summary>
+        /// <param name="str"></param>
+        public void SetShotKeyDiscribe(List<HotKey> hotKeys)
+        {
+            ShotKeys = hotKeys;
+        }
         #endregion
     }
 }

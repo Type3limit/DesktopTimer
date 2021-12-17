@@ -28,13 +28,14 @@ namespace DeskTopTimer
         public KeyModifier KeyModifiers { get; private set; }
         public Action<HotKey> Action { get; private set; }
         public int Id { get; set; }
-
+        public string name { set;get;}
         // ******************************************************************
-        public HotKey(Key k, KeyModifier keyModifiers, Action<HotKey> action, bool register = true)
+        public HotKey(Key k, KeyModifier keyModifiers, Action<HotKey> action,string name, bool register = true)
         {
             Key = k;
             KeyModifiers = keyModifiers;
             Action = action;
+            this.name = name;
             if (register)
             {
                 Register();

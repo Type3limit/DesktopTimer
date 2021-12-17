@@ -15,6 +15,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using CefSharp;
+using CefSharp.Wpf;
 using DeskTopTimer.Native;
 using MahApps.Metro.Controls;
 
@@ -188,6 +190,35 @@ namespace DeskTopTimer
         }
     }
 
+
+    internal class OpenPageSelf : ILifeSpanHandler
+    {
+        public bool DoClose(IWebBrowser browserControl, IBrowser browser)
+        {
+            return false;
+        }
+
+        public void OnAfterCreated(IWebBrowser browserControl, IBrowser browser)
+        {
+
+        }
+
+        public void OnBeforeClose(IWebBrowser browserControl, IBrowser browser)
+        {
+
+        }
+
+        public bool OnBeforePopup(IWebBrowser browserControl, IBrowser browser, IFrame frame, string targetUrl,
+string targetFrameName, WindowOpenDisposition targetDisposition, bool userGesture, IPopupFeatures popupFeatures,
+IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptAccess, out IWebBrowser newBrowser)
+        {
+            newBrowser = null;
+            var chromiumWebBrowser = (ChromiumWebBrowser)browserControl;
+            chromiumWebBrowser.Load(targetUrl);
+            return true; //Return true to cancel the popup creation copyright by codebye.com.
+        }
+    }
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -198,9 +229,11 @@ namespace DeskTopTimer
         MainWorkSpace MainWorkSpace = new MainWorkSpace();
         bool IsPlayVideoSuccess = false;
         bool IsBackgroundVideoChangedRaised = false;
-        HotKey hiddenKey = new HotKey(Key.H,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnHiddenKey));
-        HotKey flashKey = new HotKey(Key.F,KeyModifier.Shift|KeyModifier.Alt, new Action<HotKey>(OnFreshKey));
-
+        HotKey hiddenKey = new HotKey(Key.H,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnHiddenKey), "窗口隐藏\\显示");
+        HotKey flashKey = new HotKey(Key.F,KeyModifier.Shift|KeyModifier.Alt, new Action<HotKey>(OnFreshKey),"刷新");
+        HotKey setKey = new HotKey(Key.S,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnSetKey),"设置显示\\隐藏");
+        HotKey hiddenTimerKey = new HotKey(Key.T,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnHiddenTimerKey), "时间隐藏\\显示");
+        HotKey showWebFlyOut = new HotKey(Key.W,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnShowWebFlyOut),"网页地址显示\\隐藏");
         #region dependency
         public Brush BackgroundBursh
         {
@@ -279,6 +312,36 @@ namespace DeskTopTimer
                 mainWorkSpace?.INeedSeseImmediately.Execute(null);
             }
         }
+        
+        static public void OnSetKey(HotKey currentKey)
+        {
+            if (windowInstance == null)
+                return;
+            if (windowInstance?.DataContext is MainWorkSpace mainWorkSpace)
+            {
+                mainWorkSpace?.OpenSettingCommand.Execute(null);
+            }
+        }
+
+        static public void OnHiddenTimerKey(HotKey currentKey)
+        {
+            if (windowInstance == null)
+                return;
+            if (windowInstance?.DataContext is MainWorkSpace mainWorkSpace)
+            {
+                mainWorkSpace?.HideTimerCommand.Execute(null);
+            }
+        }
+
+        static public void OnShowWebFlyOut (HotKey currentKey)
+        {
+            if (windowInstance == null)
+                return;
+            if (windowInstance?.DataContext is MainWorkSpace mainWorkSpace)
+            {
+                mainWorkSpace?.ShowWebUrlCommand.Execute(null);
+            }
+        }
 
         private void SetFontBursh()
         {
@@ -299,12 +362,22 @@ namespace DeskTopTimer
             MainWorkSpace.CloseWindow += MainWorkSpace_CloseWindow;
             MainWorkSpace.BackgroundVideoChanged += MainWorkSpace_BackgroundVideoChanged;
             MainWorkSpace.VideoVolumnChanged += MainWorkSpace_VideoVolumnChanged;
+            MainWorkSpace.WebSiteChanged += MainWorkSpace_WebSiteChanged;
             Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
+            
             Task.Run(() =>
             {
                 MainWorkSpace.Init();
             });
+        }
+
+       
+        private void MainWorkSpace_WebSiteChanged(string url)
+        {
+            //WebView.Address = url;
+            MainWorkSpace.RecordHistoryCommand.Execute(url);
+            WebView.Load(url);
         }
 
         private void MainWorkSpace_VideoVolumnChanged(double value)
@@ -362,7 +435,10 @@ namespace DeskTopTimer
             IsWindowShow = true;
             BackgroundVideo.MediaStateChanged += BackgroundVideo_MediaStateChanged;
             BackgroundVideo.MessageLogged += BackgroundVideo_MessageLogged;
+            WebView.LifeSpanHandler = new OpenPageSelf();
 
+
+            MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() {hiddenKey,flashKey,setKey,hiddenTimerKey,showWebFlyOut });
         }
 
         private void BackgroundVideo_MessageLogged(object? sender, Unosquare.FFME.Common.MediaLogMessageEventArgs e)
@@ -428,6 +504,22 @@ namespace DeskTopTimer
         private void TopMostMenu_Click(object sender, RoutedEventArgs e)
         {
             MainWorkSpace.IsTopMost = !MainWorkSpace.IsTopMost;
+        }
+
+        private void backButton_Click(object sender, RoutedEventArgs e)
+        {
+            WebView.Back();
+        }
+
+        private void forwordButton_Click(object sender, RoutedEventArgs e)
+        {
+            WebView.Forward();
+        }
+
+        private void JumpTo_Click(object sender, RoutedEventArgs e)
+        {
+            MainWorkSpace.ShowWebUrlCommand.Execute(null);
+            
         }
     }
 }
