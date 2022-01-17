@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31919.166
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeskTopTimer", "DeskTopTimer\DeskTopTimer.csproj", "{45B0876A-18FD-4499-B57B-3FDA2BD78309}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D6420A4C-6958-43DC-B959-A6C2172758AB}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{45B0876A-18FD-4499-B57B-3FDA2BD78309}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45B0876A-18FD-4499-B57B-3FDA2BD78309}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45B0876A-18FD-4499-B57B-3FDA2BD78309}.Debug|x64.ActiveCfg = Debug|x64
+		{45B0876A-18FD-4499-B57B-3FDA2BD78309}.Debug|x64.Build.0 = Debug|x64
+		{45B0876A-18FD-4499-B57B-3FDA2BD78309}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45B0876A-18FD-4499-B57B-3FDA2BD78309}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45B0876A-18FD-4499-B57B-3FDA2BD78309}.Release|x64.ActiveCfg = Release|x64
+		{45B0876A-18FD-4499-B57B-3FDA2BD78309}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {21187C38-6DEA-4E2A-A353-6585CD12812D}
+	EndGlobalSection
+EndGlobal
