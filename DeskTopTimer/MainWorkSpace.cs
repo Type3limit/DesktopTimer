@@ -684,6 +684,8 @@ namespace DeskTopTimer
         /// 当前的缓存个数
         /// </summary>
         long CacheCount = 0;
+
+        List<string> _removeList = new List<string>();
         #endregion
         #endregion
 
@@ -1054,14 +1056,15 @@ namespace DeskTopTimer
                             curUrl = SeSeCache.Dequeue();
                             if ((curUrl != null))
                             {
+                                if(File.Exists(CurrentPreviewFile))
+                                    _removeList.Add(CurrentPreviewFile);//获取到新的图像就可以去除上一个了
                                 CurrentPreviewFile = curUrl.Item2;
                                 CurrentSePic = curUrl.Item1;
-                                //CacheResetSemaphore?.Release(1);
                             }
                         }
-
+                        UsedPicClean();
                         PreviewResetEvent.Reset();
-                        _IsWritingNow = false;
+
                     }
                 }
                 catch (Exception ex)
@@ -1073,6 +1076,7 @@ namespace DeskTopTimer
                 {
                     _IsPrviewStoped = true;
                     _IsPreviewStarted = false;
+                    _IsWritingNow = false;
                 }
 
             });
@@ -1175,7 +1179,7 @@ namespace DeskTopTimer
                         _IsWritingNow = false;
                         var SleepCount = new Random().Next(500, 1000) % 1000;
                         Thread.Sleep(SleepCount);
-                        AutoClean();
+                        //AutoClean();
                     }
                 }
                 catch (Exception ex)
@@ -1394,6 +1398,7 @@ namespace DeskTopTimer
         /// <summary>
         /// 自动清理（根据最大缓存数）
         /// </summary>
+        [Obsolete]
         public void AutoClean()
         {
             if (CacheCount <= MaxCacheCount + 1 || !IsOnlineSeSeMode)
@@ -1418,6 +1423,31 @@ namespace DeskTopTimer
             RemoveList.ForEach(o => { CurrentRecord.Remove(o); });
             CacheCount -= RemoveList.Count;
             Trace.WriteLine($"自动清理了{RemoveList.Count}个本地缓存文件,当前缓存数{CurrentRecord.Count}");
+        }
+
+        /// <summary>
+        /// 清理已被使用过的图片
+        /// </summary>
+        public void UsedPicClean()
+        {
+            try
+            {
+                lock(_removeList)
+                {
+
+                    foreach(var itr in _removeList)
+                    {
+                        if (File.Exists(itr))
+                            File.Delete(itr);
+                        _removeList.Remove(itr);
+                    }
+                }
+
+            }
+            catch(Exception ex)
+            {
+                Trace.WriteLine(ex);
+            }
         }
         /// <summary>
         /// 设置快捷键描述
