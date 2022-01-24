@@ -304,7 +304,16 @@ namespace DeskTopTimer
         public long MaxCacheCount
         {
             get => maxCacheCount;
-            set => SetProperty(ref maxCacheCount, value);
+            set 
+            {
+                if(maxCacheCount!=value)
+                {
+                    SetProperty(ref maxCacheCount, value);
+
+
+                }
+
+            }
         }
 
         private long maxSeSeCount = 10;//默认10秒
@@ -869,14 +878,21 @@ namespace DeskTopTimer
         {
             get => collectCurrentBackCommand ?? (collectCurrentBackCommand = new RelayCommand(() =>
                 {
-                    if (File.Exists(CurrentPreviewFile))
+                    try
                     {
-                        var destFile = Path.Combine(CollectFileStoragePath, Path.GetFileName(CurrentPreviewFile));
-                        if(!File.Exists(destFile))
+                        if (File.Exists(CurrentPreviewFile))
                         {
-                            File.Copy(CurrentPreviewFile, destFile);
-                        }
+                            var destFile = Path.Combine(CollectFileStoragePath, Path.GetFileName(CurrentPreviewFile));
+                            if (!File.Exists(destFile))
+                            {
+                                File.Copy(CurrentPreviewFile, destFile);
+                            }
 
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        Trace.WriteLine(ex);
                     }
                 }));
         }
@@ -1101,7 +1117,10 @@ namespace DeskTopTimer
 
                         _IsCacheStoped = false;
                         if (SeSeCache == null || SeSeCache.Count >= MaxCacheCount)
+                        {
+                            Thread.Sleep(100);
                             continue;
+                        }
                         _IsWritingNow = true;
                         Action currentAction = IsOnlineSeSeMode ?
                         async () =>
@@ -1177,8 +1196,8 @@ namespace DeskTopTimer
                             INeedSeseImmediately.Execute(null);
                         }
                         _IsWritingNow = false;
-                        var SleepCount = new Random().Next(500, 1000) % 1000;
-                        Thread.Sleep(SleepCount);
+                        //var SleepCount = new Random().Next(100, 1000) % 1000;
+                        Thread.Sleep(100);
                         //AutoClean();
                     }
                 }
@@ -1264,7 +1283,7 @@ namespace DeskTopTimer
             var str = JsonConvert.SerializeObject(new WebUrlRecords() { webUrls = WebAddresses });
             File.WriteAllText(FileMapper.ConfigureJson, str);
         }
-
+   
         #endregion
 
         #region SubModelRelated Methods
@@ -1378,7 +1397,16 @@ namespace DeskTopTimer
             PreviewResetEvent.Set();
 
             CacheCount = 0;
-            CurrentRecord.Clear();
+            if(CurrentRecord!=null)
+            {
+                CurrentRecord.ForEach(x=>
+                {
+                    if(File.Exists(x))
+                    File.Delete(x);
+                });
+                CurrentRecord.Clear();
+            }
+
             _shouldStopSese = true;
             lock (locker)
             {
@@ -1395,6 +1423,7 @@ namespace DeskTopTimer
             });
 
         }
+
         /// <summary>
         /// 自动清理（根据最大缓存数）
         /// </summary>
@@ -1434,13 +1463,14 @@ namespace DeskTopTimer
             {
                 lock(_removeList)
                 {
-
+                    var markList = new List<string>();
                     foreach(var itr in _removeList)
                     {
                         if (File.Exists(itr))
                             File.Delete(itr);
-                        _removeList.Remove(itr);
+                        markList.Add(itr);
                     }
+                    markList.ForEach(x=> _removeList.Remove(x));
                 }
 
             }
@@ -1449,6 +1479,7 @@ namespace DeskTopTimer
                 Trace.WriteLine(ex);
             }
         }
+
         /// <summary>
         /// 设置快捷键描述
         /// </summary>

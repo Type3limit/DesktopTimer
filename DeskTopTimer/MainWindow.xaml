@@ -256,7 +256,11 @@
                                     BorderThickness="0"
                                     Maximum="200"
                                     Minimum="1"
-                                    Value="{Binding MaxCacheCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    Value="{Binding MaxCacheCount, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="10"
+                                    Text="(重启生效)" />
                             </StackPanel>
 
                             <StackPanel Margin="0,5" Orientation="Horizontal">
