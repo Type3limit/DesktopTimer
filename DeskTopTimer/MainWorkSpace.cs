@@ -684,7 +684,7 @@ namespace DeskTopTimer
         /// <summary>
         /// 缓存队列
         /// </summary>
-        Queue<Tuple<BitmapImage, string>>? SeSeCache = new Queue<Tuple<BitmapImage, string>>(20);
+        Queue< string>? SeSeCache = new Queue< string>(20);
         /// <summary>
         /// 当前缓存中的文件记录
         /// </summary>
@@ -1058,28 +1058,31 @@ namespace DeskTopTimer
                     {
                         _IsPrviewStoped = false;
                         PreviewResetEvent.WaitOne();
-                        if (SeSeCache == null)
+                        PreviewResetEvent.Reset();
+                        if (SeSeCache == null||SeSeCache.Count<=0)
+                        {
                             continue;
+                        }
                         if (ShouldPausePreview)
                             continue;
                         _IsWritingNow = true;
-                        Tuple<BitmapImage, string>? curUrl = null;
+                        string curUrl = String.Empty;
 
                         lock (locker)
                         {
                             if (SeSeCache == null || SeSeCache.Count <= 0)
                                 continue;
                             curUrl = SeSeCache.Dequeue();
-                            if ((curUrl != null))
+                            if (!string.IsNullOrEmpty(curUrl))
                             {
                                 if(File.Exists(CurrentPreviewFile))
                                     _removeList.Add(CurrentPreviewFile);//获取到新的图像就可以去除上一个了
-                                CurrentPreviewFile = curUrl.Item2;
-                                CurrentSePic = curUrl.Item1;
+                                CurrentPreviewFile = curUrl;
+                                CurrentSePic = ImageTool.GetImage(curUrl);
                             }
                         }
                         UsedPicClean();
-                        PreviewResetEvent.Reset();
+
 
                     }
                 }
@@ -1093,6 +1096,7 @@ namespace DeskTopTimer
                     _IsPrviewStoped = true;
                     _IsPreviewStarted = false;
                     _IsWritingNow = false;
+
                 }
 
             });
@@ -1102,7 +1106,7 @@ namespace DeskTopTimer
         /// </summary>
         private void StartSeSeCacheThread()
         {
-            SeSeCache = new Queue<Tuple<BitmapImage, string>>((int)MaxCacheCount);
+            SeSeCache = new Queue< string>((int)MaxCacheCount);
             int localCount = 0;
             if (_IsCacheStarted)
                 return;
@@ -1116,7 +1120,7 @@ namespace DeskTopTimer
                     {
 
                         _IsCacheStoped = false;
-                        if (SeSeCache == null || SeSeCache.Count >= MaxCacheCount)
+                        if (SeSeCache == null || SeSeCache.Count >= MaxCacheCount||(IsOnlineSeSeMode&&string.IsNullOrEmpty(SeletctedSeSe)))
                         {
                             Thread.Sleep(100);
                             continue;
@@ -1145,7 +1149,7 @@ namespace DeskTopTimer
                                             CacheCount++;
                                             lock (locker)
                                             {
-                                                SeSeCache?.Enqueue(new Tuple<BitmapImage, string>(ImageTool.GetImage(str), str));
+                                                SeSeCache?.Enqueue(str);
                                             }
 
                                         }
@@ -1184,7 +1188,7 @@ namespace DeskTopTimer
                             {
                                 lock (locker)
                                 {
-                                    SeSeCache?.Enqueue(new Tuple<BitmapImage, string>(ImageTool.GetImage(currentFile), currentFile));
+                                    SeSeCache?.Enqueue( currentFile);
                                     localCount++;
                                 }
 
@@ -1461,7 +1465,7 @@ namespace DeskTopTimer
         {
             try
             {
-                lock(_removeList)
+                lock(locker)
                 {
                     var markList = new List<string>();
                     foreach(var itr in _removeList)
