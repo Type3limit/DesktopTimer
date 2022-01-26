@@ -50,7 +50,7 @@ namespace DeskTopTimer
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.ToString());
+                Trace.WriteLine(ex.ToString());
                 return null;
             }
         }
@@ -233,7 +233,7 @@ namespace DeskTopTimer
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(ex.ToString());
+                    Trace.WriteLine(ex.ToString());
                     return false;
                 }
             });
@@ -426,6 +426,35 @@ namespace DeskTopTimer
                     Directory.CreateDirectory(cefBrowserUserData);
                 }
                 return cefBrowserUserData;
+            }
+        }
+        /// <summary>
+        /// 日志文件目录
+        /// </summary>
+        public static string CurrentLogFileDir
+        {
+            get
+            {
+                string currentDir = System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase + "Logs";
+                if (!Directory.Exists(currentDir))
+                    Directory.CreateDirectory(currentDir);
+                return currentDir;
+            }
+        }
+        private static string currentLogFile = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
+        /// <summary>
+        /// 当前日志文件
+        /// </summary>
+        public static string CurrentLogFile
+        {
+            get
+            {
+                var FileName = Path.Combine(CurrentLogFileDir, currentLogFile + ".log");
+                if(!File.Exists(FileName))
+                {
+                    File.Create(FileName).Close();
+                }
+                return FileName;
             }
         }
     }

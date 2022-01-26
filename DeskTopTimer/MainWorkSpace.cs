@@ -264,15 +264,15 @@ namespace DeskTopTimer
             }
         }
 
-        private string currentSeSeApi = WebRequestsTool.seseUrlLevel1;
-        /// <summary>
-        /// 标识当前启用的在线地址
-        /// </summary>
-        public string CurrentSeSeApi
-        {
-            get => currentSeSeApi;
-            set => SetProperty(ref currentSeSeApi, value);
-        }
+        //private string currentSeSeApi = WebRequestsTool.seseUrlLevel1;
+        ///// <summary>
+        ///// 标识当前启用的在线地址
+        ///// </summary>
+        //public string CurrentSeSeApi
+        //{
+        //    get => currentSeSeApi;
+        //    set => SetProperty(ref currentSeSeApi, value);
+        //}
 
 
         private string collectFileStoragePath = FileMapper.LocalCollectionPictureDir;
@@ -458,7 +458,7 @@ namespace DeskTopTimer
 
         #region WindowControl
 
-        private double windowWidth = 300d;
+        private double windowWidth = 500d;
         /// <summary>
         /// 窗口宽度（不代表实际图像宽）
         /// </summary>
@@ -1020,7 +1020,7 @@ namespace DeskTopTimer
             curConfig.localFilePath = LocalFileDir;
             curConfig.backgroundImgOpacity = BackgroundImageOpacity;
             curConfig.isOnlineSeSeMode = IsOnlineSeSeMode;
-            curConfig.currentSeSeApi = CurrentSeSeApi;
+            curConfig.currentSeSeApi = SeletctedSeSe;
             curConfig.maxCacheCount = MaxCacheCount;
             curConfig.flushTime = MaxSeSeCount;
             curConfig.isTopmost = IsTopMost;
@@ -1078,6 +1078,7 @@ namespace DeskTopTimer
                                 if(File.Exists(CurrentPreviewFile))
                                     _removeList.Add(CurrentPreviewFile);//获取到新的图像就可以去除上一个了
                                 CurrentPreviewFile = curUrl;
+                                Trace.WriteLine($"正在生成：{curUrl}");
                                 CurrentSePic = ImageTool.GetImage(curUrl);
                             }
                         }
@@ -1088,7 +1089,7 @@ namespace DeskTopTimer
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(ex);
+                    Trace.WriteLine(ex);
 
                 }
                 finally
@@ -1153,7 +1154,7 @@ namespace DeskTopTimer
                                             }
 
                                         }
-                                        Debug.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次涩涩{SeletctedSeSe}");
+                                        Trace.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次涩涩{SeletctedSeSe}");
                                         break;
                                     }
                                     //case WebRequestsTool.pixivGetUrl:
@@ -1172,7 +1173,7 @@ namespace DeskTopTimer
 
                                     //    }
 
-                                    //    Debug.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次P站涩涩{SeletctedSeSe}");
+                                    //    Trace.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次P站涩涩{SeletctedSeSe}");
                                     //    break;
                                     //}
                             }
@@ -1328,7 +1329,7 @@ namespace DeskTopTimer
                 LocalFileDir = curConfig.localFilePath;
                 BackgroundImageOpacity = curConfig.backgroundImgOpacity;
                 IsOnlineSeSeMode = curConfig.isOnlineSeSeMode;
-                CurrentSeSeApi = curConfig.currentSeSeApi;
+                SeletctedSeSe = curConfig.currentSeSeApi;
                 MaxCacheCount = curConfig.maxCacheCount;
                 MaxSeSeCount = curConfig.flushTime;
                 IsTopMost = curConfig.isTopmost;
@@ -1355,10 +1356,10 @@ namespace DeskTopTimer
                   WebRequestsTool.yimianUrl,
                    //WebRequestsTool.pixivGetUrl,
             };
-            if (!SeSeApis.Contains(CurrentSeSeApi))
-                SeSeApis.Add(CurrentSeSeApi);
+            if (!SeSeApis.Contains(SeletctedSeSe))
+                SeSeApis.Add(SeletctedSeSe);
 
-            SeletctedSeSe = CurrentSeSeApi;
+           
             GetAllFont();
             SelectedFontFamily = FontFamilies.ElementAt(curConfig.timeFontIndex);
             SelectedWeekendFontFamily = FontFamilies.ElementAt(curConfig.weekendFontIndex);

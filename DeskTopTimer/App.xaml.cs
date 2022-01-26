@@ -122,7 +122,20 @@ namespace DeskTopTimer
             {
                 throw new Exception("Unable to Initialize Cef");
             }
-            
+            AddTraceListener();
+        }
+
+
+
+        private void AddTraceListener()
+        {
+           
+            StreamWriter writer = new StreamWriter(FileMapper.CurrentLogFile, false);
+            TextWriterTraceListener listener = new TextWriterTraceListener(writer, "log");
+            //TextWriterTraceListener listener = new TextWriterTraceListener(logfile, "log");
+            listener.TraceOutputOptions = TraceOptions.Callstack;
+            Trace.Listeners.Add(listener);
+            Trace.AutoFlush = true;
         }
     }
 }

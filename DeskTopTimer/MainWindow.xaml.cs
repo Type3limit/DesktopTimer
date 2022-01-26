@@ -376,7 +376,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                 }
                 catch(Exception ex)
                 {
-                    Debug.WriteLine(ex);
+                    Trace.WriteLine(ex);
                 }
                 
             });
@@ -405,7 +405,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                 }
                 catch(Exception ex)
                 {
-                    Debug.WriteLine(ex.ToString());
+                    Trace.WriteLine(ex.ToString());
                 }
             });
         }
@@ -440,7 +440,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                 {
                     IsPlayVideoSuccess = await BackgroundVideo.Close();
                     if(!IsPlayVideoSuccess)
-                        Debug.WriteLine("CloseFailed");
+                        Trace.WriteLine("CloseFailed");
                     else
                         IsPlayVideoSuccess =false;
                 }
@@ -455,13 +455,13 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                     else
                     {
        
-                        Debug.WriteLine("已关闭当前文件");
+                        Trace.WriteLine("已关闭当前文件");
                     }
                     
                 }
                 else
                 {
-                    Debug.WriteLine($"开启现有路径失败{VideoPath}");
+                    Trace.WriteLine($"开启现有路径失败{VideoPath}");
                 }
 
             }
@@ -469,9 +469,9 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             {
                 IsPlayVideoSuccess = await BackgroundVideo.Close();
                 if(IsPlayVideoSuccess)
-                    Debug.WriteLine("已关闭当前文件");
+                    Trace.WriteLine("已关闭当前文件");
                 else
-                    Debug.WriteLine("关闭当前文件失败");
+                    Trace.WriteLine("关闭当前文件失败");
             }
         }
 
@@ -489,7 +489,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
 
         private void BackgroundVideo_MessageLogged(object? sender, Unosquare.FFME.Common.MediaLogMessageEventArgs e)
         {
-            Debug.WriteLine(e.Message);
+            Trace.WriteLine(e.Message);
         }
 
         private void BackgroundVideo_MediaStateChanged(object? sender, Unosquare.FFME.Common.MediaStateChangedEventArgs e)
