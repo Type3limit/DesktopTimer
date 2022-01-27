@@ -16,6 +16,8 @@ using Newtonsoft.Json;
 using DeskTopTimer.SubModels;
 using System.Windows.Media;
 using System.Windows.Markup;
+using System.Collections.ObjectModel;
+using MahApps.Metro.Controls.Dialogs;
 
 namespace DeskTopTimer
 {
@@ -511,6 +513,19 @@ namespace DeskTopTimer
             }
         }
 
+        private bool isOpenSearchFlyOut;
+        /// <summary>
+        /// 标识是否应该打开搜索窗口
+        /// </summary>
+        public bool IsOpenSearchFlyOut
+        {
+            get => isOpenSearchFlyOut;
+            set
+            {
+                SetProperty(ref isOpenSearchFlyOut,value);
+            }
+        }
+
 
         private bool isTopMost = true;
         /// <summary>
@@ -626,6 +641,51 @@ namespace DeskTopTimer
 
         #endregion
 
+        #region SearchControl
+        private string? _currentSearchKey;
+        /// <summary>
+        /// 当前的搜索关键字
+        /// </summary>
+        public string? CurrentSearchKey
+        {
+            get => _currentSearchKey;
+            set
+            {
+                if(_currentSearchKey!=value)
+                {
+                    SetProperty(ref _currentSearchKey, value);
+                }
+
+                
+            }
+        }
+
+        private ObservableCollection<SearchResult>? _currentSearchResults = new ObservableCollection<SearchResult>();
+        /// <summary>
+        /// 当前搜索结果
+        /// </summary>
+        public ObservableCollection<SearchResult>? CurrentSearchResult
+        {
+            get => _currentSearchResults;
+            set
+            {
+                //_currentSearchResults = value;
+                SetProperty(ref _currentSearchResults,value);
+            }
+        }
+
+        private SearchResult? _selectedResult = null;
+        /// <summary>
+        /// 当前选中的搜索结果
+        /// </summary>
+        public SearchResult? SelectedResult
+        {
+            get=>_selectedResult;
+            set=>SetProperty(ref _selectedResult,value);
+        }
+
+        #endregion
+
         #endregion
 
         #region Private 
@@ -667,8 +727,11 @@ namespace DeskTopTimer
         /// </summary>
         bool _IsCacheStoped = false;
 
-        bool _IsPreviewStarted = false;
-        bool _IsCacheStarted = false;
+        volatile bool _ShouldStopCurrentFileEnumrate =false;
+        volatile bool _IsEveryThingSearchStarted =false;
+        volatile bool _IsOneThreadPausedHere = false;
+        volatile bool _IsPreviewStarted = false;
+        volatile bool _IsCacheStarted = false;
         /// <summary>
         /// 本地文件记录
         /// </summary>
@@ -791,6 +854,12 @@ namespace DeskTopTimer
         /// 网址变更事件
         /// </summary>
         public event ChangeWebSiteHandler? WebSiteChanged;
+
+        public delegate Task<ProgressDialogController> BusyHandler(string busyReason);
+        /// <summary>
+        /// 忙碌事件
+        /// </summary>
+        public event BusyHandler BusyNow;
 
         #endregion
 
@@ -973,6 +1042,104 @@ namespace DeskTopTimer
                 }));
         }
 
+
+        private ICommand? startSearchCommand;
+        /// <summary>
+        /// 开始对本机文件进行搜索
+        /// </summary>
+        public ICommand? StartSearchCommand
+        {
+            get => startSearchCommand??(startSearchCommand= new RelayCommand(() => 
+            {
+                if(string.IsNullOrEmpty(CurrentSearchKey)|| _IsOneThreadPausedHere)
+                      return;
+                Task.Run(async () => 
+                {
+                    if (_IsEveryThingSearchStarted)
+                    {
+                       _ShouldStopCurrentFileEnumrate = true;
+                        _IsOneThreadPausedHere = true;
+                        while (!_IsEveryThingSearchStarted)
+                        {
+                            Thread.Sleep(100);
+                        }
+                        _ShouldStopCurrentFileEnumrate= false;
+                        _IsOneThreadPausedHere = false;
+                    }
+                    var Con = await BusyNow?.Invoke("相关文件搜索中...");
+                    try
+                    {
+
+                        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            CurrentSearchResult?.Clear();
+                        });
+                        //EverythingApi.ResetSearchStatus();
+                        _IsEveryThingSearchStarted = true;
+                        
+                        var res = await EverythingApi.SearchFile(CurrentSearchKey,23,1000);
+                        if(res==null)
+                            return;
+                        var enumrator = res.GetEnumerator();
+                        Con?.CloseAsync();
+                        while (enumrator.MoveNext()&& !_ShouldStopCurrentFileEnumrate)
+                        {
+                            if (!enumrator.Current.HasResult)
+                                break;
+                            if(string.IsNullOrEmpty(enumrator.Current.FullPath))
+                                continue;
+                            System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                            {
+                                CurrentSearchResult?.Add(enumrator.Current);
+                            });
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        Trace.WriteLine(ex);
+                    }
+                    finally
+                    {
+                        _IsEveryThingSearchStarted=false;
+
+                    }
+               });
+
+            }));
+            
+        }
+
+        private ICommand? openCurrentSelectedResult = null;
+        /// <summary>
+        /// 打开当前选中的文件
+        /// </summary>
+        public ICommand? OpenCurrentSelectedResult
+        {
+            get => openCurrentSelectedResult ?? (openCurrentSelectedResult = new RelayCommand<string>((str)=> 
+            {
+                if(SelectedResult==null)
+                    return;
+                if(string.IsNullOrEmpty(str))
+                    SelectedResult.RunCurrentProcess?.Execute(null);
+                else
+                    SelectedResult.OpenInExplorer?.Execute(null);
+            }));
+        }
+
+        ICommand? runCurrentSelectedResultCommand = null;
+        /// <summary>
+        /// 启动选中的搜索对象进程
+        /// </summary>
+        public ICommand? RunCurrentSelectedResultCommand
+        { 
+            get=> runCurrentSelectedResultCommand ?? (runCurrentSelectedResultCommand = new RelayCommand(() => 
+            { 
+                if(SelectedResult==null)
+                    return;
+                SelectedResult?.RunCurrentProcess?.Execute(null);
+            }));
+        }
+
         #endregion
 
         #region private Methods
@@ -1046,10 +1213,11 @@ namespace DeskTopTimer
         /// </summary>
         private void StartSeSePreviewThread()
         {
-            if (_IsPreviewStarted)
-                return;
+            
             Task.Run(() =>
             {
+                if (_IsPreviewStarted)
+                    return;
                 Trace.WriteLine($"[{DateTime.Now.ToLocalTime()}]开启预览控制线程");
                 try
                 {
@@ -1109,10 +1277,11 @@ namespace DeskTopTimer
         {
             SeSeCache = new Queue< string>((int)MaxCacheCount);
             int localCount = 0;
-            if (_IsCacheStarted)
-                return;
+
             Task.Run(() =>
             {
+                if (_IsCacheStarted)
+                    return;
                 Trace.WriteLine($"[{DateTime.Now.ToLocalTime()}]开启缓存控制线程");
                 _IsCacheStarted = true;
                 try
@@ -1184,12 +1353,14 @@ namespace DeskTopTimer
                         {
                             if (localCount > LocalFiles.Count)
                                 localCount = 0;
+                            if(localCount>=LocalFiles.Count)
+                                return;
                             var currentFile = LocalFiles[localCount];
                             if (File.Exists(currentFile))
                             {
                                 lock (locker)
                                 {
-                                    SeSeCache?.Enqueue( currentFile);
+                                    SeSeCache?.Enqueue(currentFile);
                                     localCount++;
                                 }
 

@@ -721,6 +721,94 @@
                 </ScrollViewer>
             </mah:Flyout>
 
+
+            <mah:Flyout
+                Width="{Binding WindowWidth, UpdateSourceTrigger=PropertyChanged}"
+                Height="{Binding WindowHeight, UpdateSourceTrigger=PropertyChanged}"
+                Background="#66000000"
+                BorderThickness="0,0,0,0.5"
+                Header="搜索"
+                IsAutoCloseEnabled="False"
+                IsOpen="{Binding IsOpenSearchFlyOut, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                Position="Top"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                Theme="Dark">
+                <ScrollViewer VerticalAlignment="Top" Style="{StaticResource MahApps.Styles.ScrollViewer.Hamburger}">
+                    <Border
+                        Width="{Binding WindowWidth, UpdateSourceTrigger=PropertyChanged}"
+                        Height="{Binding WindowHeight, UpdateSourceTrigger=PropertyChanged}"
+                        Background="#88000000"
+                        BorderBrush="#7A7A7A"
+                        BorderThickness="0"
+                        CornerRadius="6">
+                        <StackPanel>
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="键入搜索名称：" />
+                                <TextBox
+                                    Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=2}"
+                                    BorderThickness="0"
+                                    Text="{Binding CurrentSearchKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <Button
+                                    Margin="10,0"
+                                    Command="{Binding StartSearchCommand}"
+                                    Content="开始搜索" />
+                            </StackPanel>
+
+                            <ListBox
+                                Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=1.2}"
+                                Height="{Binding WindowHeight, Converter={StaticResource halfCon}, ConverterParameter=1.1}"
+                                HorizontalAlignment="Left"
+                                Background="Transparent"
+                                ItemsSource="{Binding CurrentSearchResult, UpdateSourceTrigger=PropertyChanged}"
+                                MouseDoubleClick="ListBox_MouseDoubleClick"
+                                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                SelectedItem="{Binding SelectedResult, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ListBox.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem
+                                            Command="{Binding OpenCurrentSelectedResult}"
+                                            CommandParameter="openInEx"
+                                            Header="在文件浏览器中打开" />
+                                        <MenuItem Command="{Binding OpenCurrentSelectedResult}" Header="打开文件" />
+                                    </ContextMenu>
+
+                                </ListBox.ContextMenu>
+                                <ListBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel />
+                                    </ItemsPanelTemplate>
+                                </ListBox.ItemsPanel>
+                                <ListBox.ItemTemplate>
+
+
+                                    <DataTemplate DataType="{x:Type local:SearchResult}">
+                                        <Border>
+                                            <TextBlock
+                                                Width="{Binding RelativeSource={RelativeSource AncestorType=ListBox, Mode=FindAncestor}, Path=ActualWidth, Converter={StaticResource halfCon}, ConverterParameter=1.1}"
+                                                HorizontalAlignment="Left"
+                                                Foreground="white"
+                                                Text="{Binding Name}"
+                                                TextTrimming="CharacterEllipsis"
+                                                ToolTip="{Binding FullPath}" />
+                                        </Border>
+                                    </DataTemplate>
+
+                                </ListBox.ItemTemplate>
+
+                            </ListBox>
+
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+            </mah:Flyout>
+
         </mah:FlyoutsControl>
     </mah:MetroWindow.Flyouts>
 

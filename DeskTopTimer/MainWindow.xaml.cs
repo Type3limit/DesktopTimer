@@ -19,6 +19,7 @@ using CefSharp;
 using CefSharp.Wpf;
 using DeskTopTimer.Native;
 using MahApps.Metro.Controls;
+using MahApps.Metro.Controls.Dialogs;
 using static System.Net.WebRequestMethods;
 
 namespace DeskTopTimer
@@ -242,7 +243,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
         HotKey setKey = new HotKey(Key.S,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnSetKey),"设置显示\\隐藏");
         HotKey hiddenTimerKey = new HotKey(Key.T,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnHiddenTimerKey), "时间隐藏\\显示");
         HotKey showWebFlyOut = new HotKey(Key.U,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnShowWebFlyOut),"网页地址显示\\隐藏");
-
+        HotKey showEveryThingFlyOut = new HotKey(Key.E, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowEveryThingFlyOut), "搜索本机文件");
 
         static public void OnHiddenKey(HotKey currentKey)
         {
@@ -302,6 +303,16 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             }
         }
 
+        static public void OnShowEveryThingFlyOut(HotKey currentKey)
+        {
+            if (windowInstance == null)
+                return;
+            if (windowInstance?.DataContext is MainWorkSpace mainWorkSpace)
+            {
+                mainWorkSpace.IsOpenSearchFlyOut = true;
+            }
+        }
+
         private void SetFontBursh()
         {
 
@@ -346,12 +357,21 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             MainWorkSpace.BackgroundVideoChanged += MainWorkSpace_BackgroundVideoChanged;
             MainWorkSpace.VideoVolumnChanged += MainWorkSpace_VideoVolumnChanged;
             MainWorkSpace.WebSiteChanged += MainWorkSpace_WebSiteChanged;
+            MainWorkSpace.BusyNow += MainWorkSpace_BusyNow;
             Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
             
             Task.Run(() =>
             {
                 MainWorkSpace.Init();
+            });
+        }
+
+        private async Task<MahApps.Metro.Controls.Dialogs.ProgressDialogController> MainWorkSpace_BusyNow(string busyReason)
+        {
+            return await System.Windows.Application.Current.Dispatcher.Invoke(async () =>
+            {
+                return await this.ShowProgressAsync("正在处理...", busyReason);
             });
         }
 
@@ -484,7 +504,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
 //#if DEBUG
 //            WebView.ShowDevTools();
 //#endif
-            MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() {hiddenKey,flashKey,setKey,hiddenTimerKey,showWebFlyOut });
+            MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() {hiddenKey,flashKey,setKey,hiddenTimerKey,showWebFlyOut,showEveryThingFlyOut});
         }
 
         private void BackgroundVideo_MessageLogged(object? sender, Unosquare.FFME.Common.MediaLogMessageEventArgs e)
@@ -576,6 +596,11 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             {
                 MainWorkSpace.CollectFileStoragePath = folderBrowserDialog.SelectedPath;
             }
+        }
+
+        private void ListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            MainWorkSpace?.RunCurrentSelectedResultCommand?.Execute(null);
         }
     }
 }
