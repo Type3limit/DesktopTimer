@@ -1740,7 +1740,9 @@ namespace DeskTopTimer
         /// </summary>
         public async void CloseAndRestartPreviewThread()
         {
-            Trace.WriteLine($"尝试开启 {Environment.StackTrace}");
+            #if DEBUG
+                Trace.WriteLine($"尝试开启 {Environment.StackTrace}");
+            #endif
             if(IsRestartPreviewStarted)
                 return ;
             IsRestartPreviewStarted = true;
