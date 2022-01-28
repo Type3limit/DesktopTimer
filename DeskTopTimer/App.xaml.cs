@@ -9,6 +9,9 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -20,6 +23,9 @@ namespace DeskTopTimer
     /// </summary>
     public partial class App : Application
     {
+        private static Semaphore semaphore;
+        [DllImport("user32.dll")]
+        public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
         /// <summary>
         /// 清除CefBrowser缓存
         /// </summary>
@@ -87,7 +93,22 @@ namespace DeskTopTimer
 #if ANYCPU
             //Only required for PlatformTarget of AnyCPU
             CefRuntime.SubscribeAnyCpuAssemblyResolver();
-#endif
+# endif
+            bool createdNew;
+            var currentProgramName = Assembly.GetExecutingAssembly().GetName().Name;
+            semaphore = new Semaphore(0, 1, currentProgramName, out createdNew);
+            if(!createdNew)
+            {
+               
+                Process[] temp = Process.GetProcessesByName(currentProgramName);//在所有已启动的进程中查找需要的进程；  
+                if (temp.Length > 0)//如果查找到  
+                {
+                    IntPtr handle = temp.Last().MainWindowHandle;
+                    SwitchToThisWindow(handle, true);    // 激活，显示在最前  
+                }
+
+                Environment.Exit(-2);
+            }
             base.OnStartup(e);
             RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.Default;
             Unosquare.FFME.Library.FFmpegDirectory = @".\Resources";
