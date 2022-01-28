@@ -94,26 +94,7 @@ namespace DeskTopTimer
             get => isBackgroundUsingVideo;
             set
             {
-                SetProperty(ref isBackgroundUsingVideo, value);
-                if (value)
-                {
-
-
-                    if (String.IsNullOrEmpty(CurrentBackgroundVideoPath))
-                        VideoPathDir = VideoPathDir;
-                    else
-                        CurrentBackgroundVideoPath = CurrentBackgroundVideoPath;
-                    CloseSese();
-                }
-                else
-                {
-
-                    BackgroundVideoChanged?.Invoke("");
-                    _shouldStopSese = false;
-                    StartSeSeCacheThread();
-                    StartSeSePreviewThread();
-                }
-
+                ChangeVideoMode(value);
             }
 
         }
@@ -140,33 +121,7 @@ namespace DeskTopTimer
             {
                 if (isWebViewVisible == value)
                     return;
-                if (value)
-                {
-                    if (IsBackgroundUsingVideo)
-                    {
-                        BackgroundVideoChanged?.Invoke("");
-                    }
-                    else
-                    {
-                        _ = CloseSese();
-                        CurrentWebAddress = CurrentWebAddress;
-                    }
-                }
-                else
-                {
-                    if (IsBackgroundUsingVideo)
-                    {
-                        BackgroundVideoChanged?.Invoke(CurrentBackgroundVideoPath);
-                    }
-                    else
-                    {
-                        _=CloseSese();
-                        _shouldStopSese = false;
-                        StartSeSeCacheThread();
-                        StartSeSePreviewThread();
-                    }
-                }
-                SetProperty(ref isWebViewVisible, value);
+                ChangeWebMode(value);
             }
         }
 
@@ -721,17 +676,21 @@ namespace DeskTopTimer
         /// <summary>
         /// 标识刷新线程是否已经停止
         /// </summary>
-        bool _IsPrviewStoped = false;
+        bool _IsPrviewStoped = true;
         /// <summary>
         /// 标识缓存线程是否已经停止
         /// </summary>
-        bool _IsCacheStoped = false;
+        bool _IsCacheStoped = true;
 
         volatile bool _ShouldStopCurrentFileEnumrate =false;
         volatile bool _IsEveryThingSearchStarted =false;
         volatile bool _IsOneThreadPausedHere = false;
         volatile bool _IsPreviewStarted = false;
         volatile bool _IsCacheStarted = false;
+
+        Thread? CacheThread = null;
+        Thread? PreviewThread = null;
+
         /// <summary>
         /// 本地文件记录
         /// </summary>
@@ -823,7 +782,11 @@ namespace DeskTopTimer
                 {
                     Trace.WriteLine($"距离上一次触发刷新过去了{sw?.ElapsedMilliseconds}ms");
                     if (!IsBackgroundUsingVideo)
+                    {
                         PreviewResetEvent.Set();
+
+                    }
+
                     seseCount = 0;
                     Trace.WriteLine($"{DateTime.Now.ToLocalTime()}触发一次刷新");
                 }
@@ -884,13 +847,11 @@ namespace DeskTopTimer
         {
             get => cleanDirCommand ?? (cleanDirCommand = new RelayCommand(async () =>
                 {
-                    await CloseSese();
+                    var res=await CloseSese();
                     string currentDir = System.Environment.CurrentDirectory + "\\PictureCache";
                     if (Directory.Exists(currentDir) && !_IsWritingNow)
                         Directory.Delete(currentDir, true);
-                    _shouldStopSese = false;
-                    StartSeSeCacheThread();
-                    StartSeSePreviewThread();
+                    CloseAndRestartPreviewThread();
                 }));
         }
 
@@ -904,11 +865,12 @@ namespace DeskTopTimer
                  {
                      if (IsBackgroundUsingVideo)
                          NextVideoCommand.Execute(null);
-                     else
+                     else if(!IsWebViewVisible)
                      {
                          seseCount = 0;
                          if (ShouldPausePreview)
                              ShouldPausePreview = false;
+                       
                          PreviewResetEvent.Set();
                      }
 
@@ -1157,23 +1119,90 @@ namespace DeskTopTimer
                     return;
             MyDirectory.GetFiles(FileMapper.PictureCacheDir, @"\.png$|\.jpg$|\.jpeg$|\.bmp$", SearchOption.AllDirectories).ToList().ForEach(o =>
              {
-                 if (File.Exists(o))
-                     File.Delete(o);
+                 try
+                 {
+                     if (File.Exists(o))
+                         File.Delete(o);
+                 }
+                 catch(Exception ex)
+                 {
+                     Trace.Write(ex);
+                     return;
+                 }
              });
 
         }
+        /// <summary>
+        /// 变更网络模式
+        /// </summary>
+        /// <param name="value"></param>
+        private async void ChangeWebMode(bool value)
+        {
+            SetProperty(ref isWebViewVisible, value);
+            OnPropertyChanged("IsWebViewVisible");
+            if (value)
+            {
+                if (IsBackgroundUsingVideo)
+                {
+                    BackgroundVideoChanged?.Invoke("");
+                }
+                else
+                {
+                    CurrentWebAddress = CurrentWebAddress;
+                    var res = await CloseSese();
+                }
+            }
+            else
+            {
+                if (IsBackgroundUsingVideo)
+                {
+                    BackgroundVideoChanged?.Invoke(CurrentBackgroundVideoPath);
+                }
+                else
+                {
+                    CloseAndRestartPreviewThread();
 
+                }
+            }
+
+
+        }
+        /// <summary>
+        /// 变更视频模式
+        /// </summary>
+        /// <param name="value"></param>
+        private async void ChangeVideoMode(bool value)
+        {
+            SetProperty(ref isBackgroundUsingVideo, value);
+            OnPropertyChanged("IsBackgroundUsingVideo");
+            if (value)
+            {
+
+
+                if (String.IsNullOrEmpty(CurrentBackgroundVideoPath))
+                    VideoPathDir = VideoPathDir;
+                else
+                    CurrentBackgroundVideoPath = CurrentBackgroundVideoPath;
+                var res = await CloseSese();
+            }
+            else
+            {
+               
+                BackgroundVideoChanged?.Invoke("");
+                CloseAndRestartPreviewThread();
+
+            }
+           
+        }
         /// <summary>
         /// api切换时，重启两个线程
         /// </summary>
         private async void ApiChanged()
         {
-            if (IsOnlineSeSeMode)
+            if (IsOnlineSeSeMode&&!IsBackgroundUsingVideo&&!IsWebViewVisible)
             {
-                await CloseSese();
-                _shouldStopSese = false;
-                StartSeSeCacheThread();
-                StartSeSePreviewThread();
+                CloseAndRestartPreviewThread();
+
             }
         }
         /// <summary>
@@ -1211,121 +1240,125 @@ namespace DeskTopTimer
         /// <summary>
         /// 开启刷新控制线程
         /// </summary>
-        private void StartSeSePreviewThread()
+        private bool StartSeSePreviewThread()
         {
-            
-            Task.Run(() =>
-            {
-                if (_IsPreviewStarted)
-                    return;
-                Trace.WriteLine($"[{DateTime.Now.ToLocalTime()}]开启预览控制线程");
-                try
-                {
-                    _IsPreviewStarted = true;
-                    while (!_shouldStopSese)
+            if (PreviewThread!=null|| _IsPreviewStarted )
+                return false;
+            _IsPreviewStarted = true;
+            PreviewThread = new Thread(() => {
+                    try
                     {
-                        _IsPrviewStoped = false;
-                        PreviewResetEvent.WaitOne();
-                        PreviewResetEvent.Reset();
-                        if (SeSeCache == null||SeSeCache.Count<=0)
+                        
+                        Trace.WriteLine($"[{DateTime.Now.ToLocalTime()}]开启预览控制线程");
+                        while (!_shouldStopSese)
                         {
-                            continue;
-                        }
-                        if (ShouldPausePreview)
-                            continue;
-                        _IsWritingNow = true;
-                        string curUrl = String.Empty;
-
-                        lock (locker)
-                        {
+                            _IsPrviewStoped = false;
+                            PreviewResetEvent.WaitOne();
+                            PreviewResetEvent.Reset();
                             if (SeSeCache == null || SeSeCache.Count <= 0)
-                                continue;
-                            curUrl = SeSeCache.Dequeue();
-                            if (!string.IsNullOrEmpty(curUrl))
                             {
-                                if(File.Exists(CurrentPreviewFile))
-                                    _removeList.Add(CurrentPreviewFile);//获取到新的图像就可以去除上一个了
-                                CurrentPreviewFile = curUrl;
-                                Trace.WriteLine($"正在生成：{curUrl}");
-                                CurrentSePic = ImageTool.GetImage(curUrl);
+                                continue;
                             }
-                        }
-                        UsedPicClean();
+                            if (ShouldPausePreview)
+                                continue;
+                            _IsWritingNow = true;
+                            string curUrl = String.Empty;
 
+                            lock (locker)
+                            {
+                                if (SeSeCache == null || SeSeCache.Count <= 0)
+                                    continue;
+                                curUrl = SeSeCache.Dequeue();
+                                if (!string.IsNullOrEmpty(curUrl))
+                                {
+                                    if (File.Exists(CurrentPreviewFile))
+                                        _removeList.Add(CurrentPreviewFile);//获取到新的图像就可以去除上一个了
+                                    CurrentPreviewFile = curUrl;
+                                    Trace.WriteLine($"正在生成：{curUrl}");
+                                    CurrentSePic = ImageTool.GetImage(curUrl);
+                                }
+                            }
+                            UsedPicClean();
+
+
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine(ex);
 
                     }
-                }
-                catch (Exception ex)
-                {
-                    Trace.WriteLine(ex);
+                    finally
+                    {
+                        _IsPrviewStoped = true;
+                        _IsWritingNow = false;
 
-                }
-                finally
-                {
-                    _IsPrviewStoped = true;
-                    _IsPreviewStarted = false;
-                    _IsWritingNow = false;
+                    }
 
-                }
+                });
+             PreviewThread.IsBackground = true;
+             PreviewThread?.Start();
 
-            });
+            _IsPreviewStarted = false;
+            return true;
         }
         /// <summary>
         /// 开启缓存控制线程
         /// </summary>
-        private void StartSeSeCacheThread()
+        private bool StartSeSeCacheThread()
         {
-            SeSeCache = new Queue< string>((int)MaxCacheCount);
-            int localCount = 0;
-
-            Task.Run(() =>
-            {
-                if (_IsCacheStarted)
-                    return;
-                Trace.WriteLine($"[{DateTime.Now.ToLocalTime()}]开启缓存控制线程");
-                _IsCacheStarted = true;
-                try
+           if(CacheThread!=null|| _IsCacheStarted)
+                return false;
+            _IsCacheStarted = true;
+            CacheThread = new Thread(() =>
                 {
-                    while (!_shouldStopSese)
-                    {
+                    int localCount = 0;
 
-                        _IsCacheStoped = false;
-                        if (SeSeCache == null || SeSeCache.Count >= MaxCacheCount||(IsOnlineSeSeMode&&string.IsNullOrEmpty(SeletctedSeSe)))
+                    SeSeCache = new Queue<string>((int)MaxCacheCount);
+                    try
+                    {
+                        Trace.WriteLine($"[{DateTime.Now.ToLocalTime()}]开启缓存控制线程");
+                        
+                        while (!_shouldStopSese)
                         {
-                            Thread.Sleep(100);
-                            continue;
-                        }
-                        _IsWritingNow = true;
-                        Action currentAction = IsOnlineSeSeMode ?
-                        async () =>
-                        {
-                            string currentFileName = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss_FFFF");
-                            switch (SeletctedSeSe)
+
+                            _IsCacheStoped = false;
+                            if (SeSeCache == null || SeSeCache.Count >= MaxCacheCount || (IsOnlineSeSeMode && string.IsNullOrEmpty(SeletctedSeSe)))
                             {
-                                case WebRequestsTool.seseUrlLevel1:
+                                Thread.Sleep(100);
+                                continue;
+                            }
+                            _IsWritingNow = true;
+                            Action currentAction = IsOnlineSeSeMode ?
+                            async () =>
+                            {
+                                string currentFileName = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss_FFFF");
+                                switch (SeletctedSeSe)
+                                {
+                                    case WebRequestsTool.seseUrlLevel1:
                                 //case WebRequestsTool.seseUrlLevel2:
                                 //case WebRequestsTool.seseUrlLevel3:
                                 case WebRequestsTool.BackgroundUrl:
                                 //case WebRequestsTool.mcUrl:
                                 case WebRequestsTool.toubieUrl:
-                                case WebRequestsTool.paugramUrl:
-                                case WebRequestsTool.dmoeUrl:
-                                case WebRequestsTool.yimianUrl:
-                                    {
-                                        var str = await WebRequestsTool.RequestSeSePic(SeletctedSeSe, FileMapper.NormalSeSePictureDir, currentFileName);
-                                        if (File.Exists(str))
+                                    case WebRequestsTool.paugramUrl:
+                                    case WebRequestsTool.dmoeUrl:
+                                    case WebRequestsTool.yimianUrl:
                                         {
-                                            CurrentRecord.Add(str);
-                                            CacheCount++;
-                                            lock (locker)
+                                            var str = await WebRequestsTool.RequestSeSePic(SeletctedSeSe, FileMapper.NormalSeSePictureDir, currentFileName);
+                                            if (File.Exists(str))
                                             {
-                                                SeSeCache?.Enqueue(str);
-                                            }
+                                                CurrentRecord.Add(str);
+                                                CacheCount++;
+                                                lock (locker)
+                                                {
+                                                    SeSeCache?.Enqueue(str);
+                                                }
 
+                                            }
+                                            Trace.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次涩涩{SeletctedSeSe}");
+                                            break;
                                         }
-                                        Trace.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次涩涩{SeletctedSeSe}");
-                                        break;
-                                    }
                                     //case WebRequestsTool.pixivGetUrl:
                                     //{
                                     //    var res = await WebRequestsTool.RequestGetModePixivSeSePic(SeletctedSeSe, FileMapper.PixivSeSePictureDir, currentFileName);
@@ -1347,48 +1380,52 @@ namespace DeskTopTimer
                                     //}
                             }
 
-                        }
-                        :
-                        () =>
-                        {
-                            if (localCount > LocalFiles.Count)
-                                localCount = 0;
-                            if(localCount>=LocalFiles.Count)
-                                return;
-                            var currentFile = LocalFiles[localCount];
-                            if (File.Exists(currentFile))
-                            {
-                                lock (locker)
-                                {
-                                    SeSeCache?.Enqueue(currentFile);
-                                    localCount++;
-                                }
-
                             }
-                        };
-                        currentAction();
-                        if (CurrentSePic == null)
-                        {
-                            INeedSeseImmediately.Execute(null);
+                            :
+                            () =>
+                            {
+                                if (localCount > LocalFiles.Count)
+                                    localCount = 0;
+                                if (localCount >= LocalFiles.Count)
+                                    return;
+                                var currentFile = LocalFiles[localCount];
+                                if (File.Exists(currentFile))
+                                {
+                                    lock (locker)
+                                    {
+                                        SeSeCache?.Enqueue(currentFile);
+                                        localCount++;
+                                    }
+
+                                }
+                            };
+                            currentAction();
+                            if (CurrentSePic == null)
+                            {
+                                INeedSeseImmediately.Execute(null);
+                            }
+                            _IsWritingNow = false;
+                            //var SleepCount = new Random().Next(100, 1000) % 1000;
+                            Thread.Sleep(100);
+                            //AutoClean();
                         }
-                        _IsWritingNow = false;
-                        //var SleepCount = new Random().Next(100, 1000) % 1000;
-                        Thread.Sleep(100);
-                        //AutoClean();
                     }
-                }
-                catch (Exception ex)
-                {
-                    Trace.WriteLine(ex);
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine(ex);
 
-                }
-                finally
-                {
-                    _IsCacheStoped = true;
-                    _IsCacheStarted = false;
-                }
+                    }
+                    finally
+                    {
+                        _IsCacheStoped = true;
+                    }
 
-            });
+                });
+            CacheThread.IsBackground = true;
+            CacheThread?.Start();
+
+            _IsCacheStarted = false;
+            return true;
         }
         /// <summary>
         /// 切换在线、本地模式
@@ -1483,10 +1520,10 @@ namespace DeskTopTimer
         /// <summary>
         /// 初始化，在窗口类初始化后执行
         /// </summary>
-        public void Init()
+        public async void Init()
         {
 
-
+            ClearCacheDir();
             var curConfig = JsonConvert.DeserializeObject<Configure>(File.ReadAllText(FileMapper.ConfigureJson));
             if (curConfig == null)
             {
@@ -1495,22 +1532,31 @@ namespace DeskTopTimer
             }
             else
             {
+                if(curConfig.windowWidth>100)
                 WindowWidth = curConfig.windowWidth;
-                WindowHeight = curConfig.windowHeight;
-                LocalFileDir = curConfig.localFilePath;
-                BackgroundImageOpacity = curConfig.backgroundImgOpacity;
+                if (curConfig.windowHeight > 100)
+                    WindowHeight = curConfig.windowHeight;
+                if (!string.IsNullOrEmpty(curConfig.localFilePath))
+                    LocalFileDir = curConfig.localFilePath;
+                if(curConfig.backgroundImgOpacity>=0)
+                    BackgroundImageOpacity = curConfig.backgroundImgOpacity;
                 IsOnlineSeSeMode = curConfig.isOnlineSeSeMode;
-                SeletctedSeSe = curConfig.currentSeSeApi;
-                MaxCacheCount = curConfig.maxCacheCount;
-                MaxSeSeCount = curConfig.flushTime;
+                if (!string.IsNullOrEmpty(curConfig.currentSeSeApi))
+                    SeletctedSeSe = curConfig.currentSeSeApi;
+                if (curConfig.flushTime > 1)
+                    MaxCacheCount = curConfig.maxCacheCount;
+                if(curConfig.flushTime>10)
+                   MaxSeSeCount = curConfig.flushTime;
                 IsTopMost = curConfig.isTopmost;
                 IsWebViewVisible = curConfig.IsWebViewVisiable;
-                CurrentWebAddress = curConfig.WebSiteUrl;
-                CollectFileStoragePath = curConfig.localCollectdPath;
+                if (!string.IsNullOrEmpty(curConfig.WebSiteUrl))
+                    CurrentWebAddress = curConfig.WebSiteUrl;
+                if(!string.IsNullOrEmpty(curConfig.localCollectdPath))
+                   CollectFileStoragePath = curConfig.localCollectdPath;
             }
             ReadWebSites();
             if (string.IsNullOrEmpty(CurrentWebAddress))
-                CurrentWebAddress = WebAddresses.FirstOrDefault();
+                CurrentWebAddress = WebAddresses?.FirstOrDefault();
             //CacheResetSemaphore = new Semaphore((int)MaxCacheCount - 1, (int)MaxCacheCount);
 
             SeSeApis = new List<string>()
@@ -1538,9 +1584,10 @@ namespace DeskTopTimer
             WeekendCenterFontSize = curConfig.weekendFontSize;
             TimeFontColor = ColorToStringHelper.HexConverter(curConfig.timeFontColor);
             WeekendFontColor = ColorToStringHelper.HexConverter(curConfig.weekendFontColor);
-            ClearCacheDir();
+
             IsBackgroundUsingVideo = curConfig.isUsingVideoBackGround;
-            videoPathDir = curConfig.videoDir;
+            if(!string.IsNullOrEmpty(curConfig.videoDir))
+               videoPathDir = curConfig.videoDir;
             BackgroundVideos = ReadDestVideo(videoPathDir);
             IsLoopPlay = curConfig.isLoopPlay;
             VideoVolume = curConfig.volume;
@@ -1548,9 +1595,7 @@ namespace DeskTopTimer
             {
                 if (!IsBackgroundUsingVideo)
                 {
-                    StartSeSeCacheThread();
-                    StartSeSePreviewThread();
-
+                    CloseAndRestartPreviewThread();
                 }
                 else
                 {
@@ -1575,10 +1620,24 @@ namespace DeskTopTimer
             CacheCount = 0;
             if(CurrentRecord!=null)
             {
-                CurrentRecord.ForEach(x=>
+                var CurrentCacheFiles = new List<string>(CurrentRecord);
+                await Task.Run(() => 
                 {
-                    if(File.Exists(x))
-                    File.Delete(x);
+                    
+                        
+                   foreach (var x in CurrentCacheFiles)
+                   {
+                        try
+                        {
+                            if (File.Exists(x))
+                                File.Delete(x);
+                        }
+                        catch (Exception ex)
+                        {
+                            Trace.WriteLine("尝试清除缓存文件时发生错误");
+                            continue;
+                        }
+                    }
                 });
                 CurrentRecord.Clear();
             }
@@ -1593,8 +1652,18 @@ namespace DeskTopTimer
             return await Task.Run(() =>
             {
                 while (!_IsCacheStoped || !_IsPrviewStoped)
+                {
+                    PreviewResetEvent.Set();
+                    _shouldStopSese = true;
                     Thread.Sleep(1);
+                }
+                    
                 Trace.WriteLine($"[{DateTime.Now.ToLocalTime()}]已关闭预览和缓存线程");
+                CacheThread = null;
+                PreviewThread = null;
+                _shouldStopSese = false; 
+                CurrentPreviewFile = null;
+                CurrentSePic = null;
                 return true;
             });
 
@@ -1663,6 +1732,25 @@ namespace DeskTopTimer
         public void SetShotKeyDiscribe(List<HotKey> hotKeys)
         {
             ShotKeys = hotKeys;
+        }
+
+        bool IsRestartPreviewStarted = false;
+        /// <summary>
+        /// 重启预览和缓存线程
+        /// </summary>
+        public async void CloseAndRestartPreviewThread()
+        {
+            Trace.WriteLine($"尝试开启 {Environment.StackTrace}");
+            if(IsRestartPreviewStarted)
+                return ;
+            IsRestartPreviewStarted = true;
+            var res = await CloseSese();
+            await Task.Run(() =>
+            {
+                while (!StartSeSeCacheThread()) ;
+                while (!StartSeSePreviewThread()) ;
+            });
+            IsRestartPreviewStarted = false;
         }
         #endregion
     }

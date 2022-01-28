@@ -361,10 +361,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
             
-            Task.Run(() =>
-            {
-                MainWorkSpace.Init();
-            });
+           
         }
 
         private async Task<MahApps.Metro.Controls.Dialogs.ProgressDialogController> MainWorkSpace_BusyNow(string busyReason)
@@ -497,6 +494,10 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            Task.Run(() =>
+            {
+                MainWorkSpace.Init();
+            });
             windowInstance = this;
             IsWindowShow = true;
             BackgroundVideo.MediaStateChanged += BackgroundVideo_MediaStateChanged;
