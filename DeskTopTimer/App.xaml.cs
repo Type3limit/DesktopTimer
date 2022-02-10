@@ -106,8 +106,8 @@ namespace DeskTopTimer
                     IntPtr handle = temp.Last().MainWindowHandle;
                     SwitchToThisWindow(handle, true);    // 激活，显示在最前  
                 }
-
                 Environment.Exit(-2);
+                return;
             }
             base.OnStartup(e);
             RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.Default;

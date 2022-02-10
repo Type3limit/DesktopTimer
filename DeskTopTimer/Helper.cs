@@ -249,7 +249,7 @@ namespace DeskTopTimer
     /// <summary>
     /// 路径定义
     /// </summary>
-    public static class FileMapper
+    public class FileMapper
     {
         /// <summary>
         /// 图片缓存目录
@@ -262,6 +262,19 @@ namespace DeskTopTimer
                 if (!Directory.Exists(currentDir))
                     Directory.CreateDirectory(currentDir);
                 return currentDir;
+            }
+        }
+        /// <summary>
+        /// 配置文件目录
+        /// </summary>
+        public static string ConfigureDir
+        {
+            get 
+            {
+                string currentFile = Path.Combine(System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "Configuration");
+                if (!Directory.Exists(currentFile))
+                    Directory.CreateDirectory(currentFile);
+                return currentFile;
             }
         }
         /// <summary>
@@ -336,7 +349,7 @@ namespace DeskTopTimer
         {
             get
             {
-                string currentFile = Path.Combine(System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "Configuration.Json");
+                string currentFile = Path.Combine(ConfigureDir, "Configuration.Json");
                 if (!File.Exists(currentFile))
                     File.Create(currentFile).Close();
                 return currentFile;
@@ -349,7 +362,7 @@ namespace DeskTopTimer
         {
             get
             {
-                string currentFile = Path.Combine(System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "Models.Json");
+                string currentFile = Path.Combine(ConfigureDir, "Models.Json");
                 if (!File.Exists(currentFile))
                     File.Create(currentFile).Close();
                 return currentFile;
@@ -362,7 +375,7 @@ namespace DeskTopTimer
         {
             get
             {
-                string currentFile = Path.Combine(System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "Webs.Json");
+                string currentFile = Path.Combine(ConfigureDir, "Webs.Json");
                 if (!File.Exists(currentFile))
                     File.Create(currentFile).Close();
                 return currentFile;
@@ -719,7 +732,6 @@ namespace DeskTopTimer
                     execPath = subkey.GetValue("DisplayIcon") as string;
                     if (string.IsNullOrEmpty(displayName) || string.IsNullOrEmpty(execPath) || !File.Exists(execPath))
                         continue;
-                    continue;
 
                     gInstalledSoftware.Add(displayName,execPath);
                 }
@@ -735,7 +747,6 @@ namespace DeskTopTimer
                     execPath = subkey.GetValue("DisplayIcon") as string;
                     if (string.IsNullOrEmpty(displayName) || string.IsNullOrEmpty(execPath) || !File.Exists(execPath))
                         continue;
-                    continue;
 
                     gInstalledSoftware.Add(displayName,execPath);
                 }
@@ -750,7 +761,6 @@ namespace DeskTopTimer
                     execPath = subkey.GetValue("DisplayIcon") as string;
                     if (string.IsNullOrEmpty(displayName) || string.IsNullOrEmpty(execPath) || !File.Exists(execPath))
                         continue;
-                    continue;
 
                     gInstalledSoftware.Add(displayName,execPath);
                 }

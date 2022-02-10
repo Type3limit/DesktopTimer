@@ -554,7 +554,8 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
 
         private void root_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            MainWorkSpace.WriteCurrentSettingToJson();
+            if(MainWorkSpace._IsInitComplete)
+                MainWorkSpace.WriteCurrentSettingToJson();
         }
 
 

@@ -649,6 +649,8 @@ namespace DeskTopTimer
         /// </summary>
         long seseCount = 0;
 
+        FileMapper FileMapper = new FileMapper();
+
         /// <summary>
         /// 用于计数的timer
         /// </summary>
@@ -687,7 +689,7 @@ namespace DeskTopTimer
         volatile bool _IsOneThreadPausedHere = false;
         volatile bool _IsPreviewStarted = false;
         volatile bool _IsCacheStarted = false;
-
+        public volatile bool _IsInitComplete = false;
         Thread? CacheThread = null;
         Thread? PreviewThread = null;
 
@@ -822,7 +824,7 @@ namespace DeskTopTimer
         /// <summary>
         /// 忙碌事件
         /// </summary>
-        public event BusyHandler BusyNow;
+        public event BusyHandler? BusyNow;
 
         #endregion
 
@@ -1522,7 +1524,7 @@ namespace DeskTopTimer
         /// </summary>
         public async void Init()
         {
-
+            _IsInitComplete = false;
             ClearCacheDir();
             var curConfig = JsonConvert.DeserializeObject<Configure>(File.ReadAllText(FileMapper.ConfigureJson));
             if (curConfig == null)
@@ -1606,7 +1608,7 @@ namespace DeskTopTimer
                         CurrentBackgroundVideoPath = BackgroundVideos.FirstOrDefault();
                 }
             }
-
+            _IsInitComplete = true;
         }
         /// <summary>
         /// 关闭刷新、缓存线程
@@ -1622,19 +1624,18 @@ namespace DeskTopTimer
             {
                 var CurrentCacheFiles = new List<string>(CurrentRecord);
                 await Task.Run(() => 
-                {
-                    
-                        
+                {    
                    foreach (var x in CurrentCacheFiles)
                    {
                         try
                         {
                             if (File.Exists(x))
                                 File.Delete(x);
+
                         }
                         catch (Exception ex)
                         {
-                            Trace.WriteLine("尝试清除缓存文件时发生错误");
+                            Trace.WriteLine($"尝试清除缓存文件[{x}]时发生错误"+ex);
                             continue;
                         }
                     }
