@@ -335,7 +335,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
 
             WebView.LifeSpanHandler = new OpenPageSelf();
             BrowserSettings bset = new BrowserSettings();
-            bset.Plugins = CefState.Enabled;
+            
             bset.WindowlessFrameRate = 60;
             bset.WebGl = CefState.Enabled;
             WebView.BrowserSettings = bset;

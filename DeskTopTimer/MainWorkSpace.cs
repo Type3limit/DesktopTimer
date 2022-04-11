@@ -744,7 +744,7 @@ namespace DeskTopTimer
             timer.Elapsed += Timer_Elapsed;
             timer.Start();
 
-            TaskbarIcon = ImageTool.GetImage(@".\Resources\timer-2.ico");
+            TaskbarIcon = ImageTool.GetImage(Path.Combine(System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase,@"Resources\timer-2.ico"));
         }
         #endregion
 
@@ -1456,7 +1456,7 @@ namespace DeskTopTimer
         {
             if (!Directory.Exists(DirPath))
                 return new List<string>();
-            var files = MyDirectory.GetFiles(DirPath, @"\.mp4$|\.mov$|\.flv$|\.mxf$|\.mkv$").ToList();
+            var files = MyDirectory.GetFiles(DirPath, @"\.mp4$|\.mov$|\.flv$|\.mxf$|\.mkv$|\.gif$").ToList();
             return files;
         }
         /// <summary>
@@ -1496,7 +1496,7 @@ namespace DeskTopTimer
         private void WriteWebSites()
         {
             var str = JsonConvert.SerializeObject(new WebUrlRecords() { webUrls = WebAddresses });
-            File.WriteAllText(FileMapper.ConfigureJson, str);
+            File.WriteAllText(FileMapper.WebSiteJson, str);
         }
    
         #endregion
@@ -1560,7 +1560,7 @@ namespace DeskTopTimer
             if (string.IsNullOrEmpty(CurrentWebAddress))
                 CurrentWebAddress = WebAddresses?.FirstOrDefault();
             //CacheResetSemaphore = new Semaphore((int)MaxCacheCount - 1, (int)MaxCacheCount);
-
+            //TODO:set SeSeApis to file records with different process way
             SeSeApis = new List<string>()
             {
                   WebRequestsTool.seseUrlLevel1,
@@ -1755,6 +1755,15 @@ namespace DeskTopTimer
             });
             IsRestartPreviewStarted = false;
         }
+
+        /// <summary>
+        /// 从外部配置文件读入网址配置
+        /// </summary>
+        public void ReadWebSitesLists()
+        {
+
+        }
+
         #endregion
     }
 }

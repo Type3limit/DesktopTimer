@@ -782,21 +782,36 @@
                                 </ListBox.ContextMenu>
                                 <ListBox.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <StackPanel />
+                                        <WrapPanel />
                                     </ItemsPanelTemplate>
                                 </ListBox.ItemsPanel>
                                 <ListBox.ItemTemplate>
 
 
                                     <DataTemplate DataType="{x:Type local:SearchResult}">
-                                        <Border>
-                                            <TextBlock
-                                                Width="{Binding RelativeSource={RelativeSource AncestorType=ListBox, Mode=FindAncestor}, Path=ActualWidth, Converter={StaticResource halfCon}, ConverterParameter=1.1}"
-                                                HorizontalAlignment="Left"
-                                                Foreground="white"
-                                                Text="{Binding Name}"
-                                                TextTrimming="CharacterEllipsis"
-                                                ToolTip="{Binding FullPath}" />
+                                        <Border
+                                            Width="100"
+                                            Height="60"
+                                            Margin="5">
+                                            <StackPanel Orientation="Vertical">
+
+                                                <Image
+                                                    Width="40"
+                                                    Height="40"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Top"
+                                                    Source="{Binding FileThumb}"
+                                                    Stretch="Uniform" />
+
+                                                <TextBlock
+                                                    Width="110"
+                                                    Height="20"
+                                                    HorizontalAlignment="Left"
+                                                    Foreground="white"
+                                                    Text="{Binding Name}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    ToolTip="{Binding FullPath}" />
+                                            </StackPanel>
                                         </Border>
                                     </DataTemplate>
 
@@ -822,6 +837,7 @@
         <Grid>
 
 
+            <!--<TB1:TaskbarIcon IconSource="{Binding TaskbarIcon}" ToolTip="桌面时钟" />-->
             <!--<TB1:TaskbarIcon
                 x:Name="TaskBar"
                 IconSource="pack://Application:,,,;component/Resources/timer-2.ico"
@@ -934,6 +950,7 @@
                 RenderOptions.CacheInvalidationThresholdMinimum="1"
                 RenderOptions.ClearTypeHint="Auto"
                 RenderOptions.EdgeMode="Aliased"
+                SnapsToDevicePixels="True"
                 UseLayoutRounding="True"
                 Visibility="{Binding IsWebViewVisible, Converter={StaticResource BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
                 <ch:ChromiumWebBrowser.OpacityMask>

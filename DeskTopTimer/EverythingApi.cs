@@ -3,12 +3,15 @@ using Microsoft.Toolkit.Mvvm.Input;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace DeskTopTimer
 {
@@ -20,7 +23,10 @@ namespace DeskTopTimer
         public string? FullPath { set; get; }
         public DateTime? LastModified { set; get; }
         public long? FileSize { set; get; }
-        public bool IsFolder { set;get;}
+        public bool IsFolder { set; get; }
+
+        public ImageSource? FileThumb { set; get; }
+
         private ICommand? _runCurrentProcess = null;
         public ICommand? RunCurrentProcess
         {
@@ -28,10 +34,10 @@ namespace DeskTopTimer
                {
                    try
                    {
-                       
+
                        if (string.IsNullOrEmpty(FullPath))
                            return;
-                       Process.Start("Explorer.exe",FullPath);
+                       Process.Start("Explorer.exe", FullPath);
                    }
                    catch (Exception ex)
                    {
@@ -43,32 +49,32 @@ namespace DeskTopTimer
         private ICommand? _openInExplorer = null;
         public ICommand? OpenInExplorer
         {
-            get=>_openInExplorer??(_openInExplorer = new RelayCommand(() => 
-            {
-                try
+            get => _openInExplorer ?? (_openInExplorer = new RelayCommand(() =>
                 {
-
-                    if (string.IsNullOrEmpty(FullPath))
-                        return;
-                    if(IsFolder)
+                    try
                     {
-                        RunCurrentProcess?.Execute(null);
-                        return;
-                    }
-                    else
-                    {
-                        System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo("Explorer.exe");
-                        psi.Arguments = "/e,/select," + FullPath;
-                        System.Diagnostics.Process.Start(psi);
-                    }
- 
-                }
-                catch (Exception ex)
-                {
-                    Trace.WriteLine(ex);
-                }
 
-            }));
+                        if (string.IsNullOrEmpty(FullPath))
+                            return;
+                        if (IsFolder)
+                        {
+                            RunCurrentProcess?.Execute(null);
+                            return;
+                        }
+                        else
+                        {
+                            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo("Explorer.exe");
+                            psi.Arguments = "/e,/select," + FullPath;
+                            System.Diagnostics.Process.Start(psi);
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine(ex);
+                    }
+
+                }));
         }
 
     }
@@ -251,58 +257,85 @@ namespace DeskTopTimer
         /// </summary>
         /// <param name="SearchKey"></param>
         /// <returns></returns>
-        public static async Task <IEnumerable<SearchResult>> SearchFile(string SearchKey, uint SortOrder =EVERYTHING_SORT_DATE_ACCESSED_ASCENDING,uint maxSearchCount = 100)
+        public static async Task<IEnumerable<SearchResult>> SearchFile(string SearchKey, uint SortOrder = EVERYTHING_SORT_DATE_ACCESSED_ASCENDING, uint maxSearchCount = 100)
         {
-            return await Task.Run(async() => {
+            return await Task.Run(async () =>
+            {
                 List<SearchResult> results = new List<SearchResult>();
 
-            Func<uint, SearchResult> ErrorStep = new Func<uint, SearchResult>((res) =>
-              {
-                  var cur = new SearchResult();
-                  cur.Name = "错误的搜索结果";
-                  cur.HasResult = false;
-                  cur.ErrorDescribe = GetErrorDescribe((int)res);
-                  return cur;
-              });
-            
-            var res = Everything_SetSearchW(SearchKey);
-            if (res != 0)
-            {
-                 var cur= ErrorStep(res);
+                Func<uint, SearchResult> ErrorStep = new Func<uint, SearchResult>((res) =>
+                  {
+                      var cur = new SearchResult();
+                      cur.Name = "错误的搜索结果";
+                      cur.HasResult = false;
+                      cur.ErrorDescribe = GetErrorDescribe((int)res);
+                      return cur;
+                  });
+
+                var res = Everything_SetSearchW(SearchKey);
+                if (res != 0)
+                {
+                    var cur = ErrorStep(res);
                     results.Add(cur);
-                    return  results;
-            }
+                    return results;
+                }
 
-            Everything_SetRequestFlags(EVERYTHING_REQUEST_FILE_NAME | EVERYTHING_REQUEST_PATH | EVERYTHING_REQUEST_DATE_RUN | EVERYTHING_REQUEST_SIZE);
+                Everything_SetRequestFlags(EVERYTHING_REQUEST_FILE_NAME | EVERYTHING_REQUEST_PATH | EVERYTHING_REQUEST_DATE_RUN | EVERYTHING_REQUEST_SIZE);
 
-            Everything_SetSort(SortOrder);
-
-            
-            Everything_QueryW(true);
-            var ResCount =Everything_GetNumResults();
+                Everything_SetSort(SortOrder);
 
 
-            for (UInt32 i = 0; i < ResCount&&i<maxSearchCount; i++)
-            {
-                var currentSearch = new SearchResult();
-                currentSearch.HasResult = true;
-                currentSearch.ErrorDescribe = "";
-                currentSearch.Name = Marshal.PtrToStringUni(Everything_GetResultFileName(i));
-                long date_modified;
-                long size;
+                Everything_QueryW(true);
+                var ResCount = Everything_GetNumResults();
 
-                Everything_GetResultDateModified(i, out date_modified);
-                Everything_GetResultSize(i, out size);
-                currentSearch.FileSize = size;
-                currentSearch.IsFolder = Everything_IsFolderResult(i);
-                //currentSearch.LastModified = DateTime.FromFileTime(date_modified);
-                var curBuidler = new StringBuilder(260);
-                Everything_GetResultFullPathNameW(i, curBuidler, 260);
-                currentSearch.FullPath = curBuidler.ToString();
-                results.Add(currentSearch);
-            }
 
-            Everything_Reset();
+                for (UInt32 i = 0; i < ResCount && i < maxSearchCount; i++)
+                {
+                    var currentSearch = new SearchResult();
+                    currentSearch.HasResult = true;
+                    currentSearch.ErrorDescribe = "";
+                    currentSearch.Name = Marshal.PtrToStringUni(Everything_GetResultFileName(i));
+                    if(currentSearch.Name!=null&&currentSearch.Name.StartsWith("~$"))//回收站内容忽略
+                        continue;
+                    long date_modified;
+                    long size;
+
+                    Everything_GetResultDateModified(i, out date_modified);
+                    Everything_GetResultSize(i, out size);
+                    currentSearch.FileSize = size;
+                    currentSearch.IsFolder = Everything_IsFolderResult(i);
+                    //currentSearch.LastModified = DateTime.FromFileTime(date_modified);
+                    var curBuidler = new StringBuilder(260);
+                    Everything_GetResultFullPathNameW(i, curBuidler, 260);
+                    currentSearch.FullPath = curBuidler.ToString();
+                    //currentSearch.FileThumb = ImageTool.ImageSourceFromBitmap(ImageTool.GetThumbnailByPath(currentSearch.FullPath));
+                    System.Drawing.Icon? curIcon = null;
+                    if (currentSearch.IsFolder)
+                    {
+                        curIcon = ImageTool.GetDirectoryIcon(currentSearch.FullPath, true);
+                    }
+                    else
+                    {
+                        curIcon = ImageTool.GetFileIcon(currentSearch.FullPath, true);
+                    }
+                    
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        curIcon?.ToBitmap()?.Save(ms,System.Drawing.Imaging.ImageFormat.Png);
+                        var bi = new BitmapImage();
+                        bi.BeginInit();
+                        bi.StreamSource = ms;
+                        bi.CacheOption = BitmapCacheOption.OnLoad;
+                        bi.EndInit();
+                        bi.Freeze();
+                        currentSearch.FileThumb = bi;
+                    }
+
+
+                    results.Add(currentSearch);
+                }
+
+                Everything_Reset();
                 return results;
             });
         }
@@ -313,7 +346,7 @@ namespace DeskTopTimer
             Everything_Reset();
         }
 
-        
+
 
         /// <summary>
         /// 获取错误码描述
