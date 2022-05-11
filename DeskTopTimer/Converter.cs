@@ -62,6 +62,20 @@ namespace DeskTopTimer.Converter
             return Binding.DoNothing;
         }
     }
+    class BoolToVisi : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool bo)
+                return bo ? Visibility.Visible : Visibility.Collapsed;
+            return Binding.DoNothing;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return Binding.DoNothing;
+        }
+    }
 
 
     public class WidthAndHeightToRectConverter : IMultiValueConverter

@@ -42,6 +42,7 @@
             <Con:WidthHalfConverter x:Key="halfCon" />
             <Con:MultiBindingConverter x:Key="ImageCo" />
             <Con:BoolToReverseVisi x:Key="bool2RVisi" />
+            <Con:BoolToVisi x:Key="bool2Visi" />
             <Con:FontNameConverter x:Key="FontFamilyCon" />
             <Con:WebSiteToVisiableConverter x:Key="webBool2Visi" />
             <Con:WebSiteToReverseVisiableConverter x:Key="webBool2ReverseVisi" />
@@ -275,6 +276,9 @@
                                     SelectedItem="{Binding SeletctedSeSe, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
 
+
+
+
                             <StackPanel Margin="0,5" Orientation="Horizontal">
                                 <TextBlock
                                     VerticalAlignment="Center"
@@ -298,7 +302,62 @@
                                 Stroke="DimGray"
                                 StrokeDashArray="2,10" />
 
+                            <TextBlock FontSize="10" Text="（仅Wallhaven api有效）" />
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
 
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="搜索关键字：" />
+                                <TextBox
+                                    Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=6}"
+                                    BorderThickness="0"
+                                    Text="{Binding WallHavenSearchKeyWords, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+
+                            </StackPanel>
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="页数：" />
+
+                                <mah:NumericUpDown
+                                    FontSize="12"
+                                    Maximum="{Binding TotalPage}"
+                                    Minimum="1"
+                                    Value="{Binding CurPage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock
+                                    Margin="10,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="/" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="{Binding TotalPage}" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock FontSize="12" Text="条目筛选：" />
+                                <CheckBox Content="通常" IsChecked="{Binding IsGeneralEnable, Mode=TwoWay}" />
+                                <CheckBox Content="动漫" IsChecked="{Binding IsAnimationEnable, Mode=TwoWay}" />
+                                <CheckBox Content="真人" IsChecked="{Binding IsPeopleEnable, Mode=TwoWay}" />
+                            </StackPanel>
+
+                            <Button
+                                x:Name="StartSearchButton"
+                                Margin="10,10"
+                                Click="StartSearchButton_Click"
+                                Content="搜索" />
+                            <Rectangle
+                                Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=2}"
+                                Height="1"
+                                Margin="0,5"
+                                Stroke="DimGray"
+                                StrokeDashArray="2,10" />
 
                             <StackPanel Margin="0,5" Orientation="Horizontal">
                                 <TextBlock

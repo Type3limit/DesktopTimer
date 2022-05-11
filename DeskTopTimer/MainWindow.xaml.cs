@@ -604,5 +604,10 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
         {
             MainWorkSpace?.RunCurrentSelectedResultCommand?.Execute(null);
         }
+
+        private void StartSearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            MainWorkSpace?.StartSeach();
+        }
     }
 }

@@ -81,7 +81,7 @@ namespace DeskTopTimer
         }
     }
     /// <summary>
-    /// 图像相关处理
+    /// 图像工具（包含常用转换，获取图标Image等）
     /// </summary>
     public class ImageTool
     {
@@ -98,12 +98,40 @@ namespace DeskTopTimer
             }
         }
 
+        public static async Task<BitmapImage?> LoadImg(string imagePath)
+        {
+            return await Task.Run(() =>
+            {
+                if (!File.Exists(imagePath))
+                    return null;
+                BitmapImage bi = new BitmapImage();
 
-        public static BitmapImage GetImage(string imagePath)
+                // Begin initialization.
+                bi.BeginInit();
+                bi.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                // Set properties.
+                bi.CacheOption = BitmapCacheOption.OnLoad;
+
+                using (Stream ms = new MemoryStream(File.ReadAllBytes(imagePath)))
+                {
+                    if (ms.Length <= 0)
+                    {
+                        bi.EndInit();
+                        bi.Freeze();
+                        return bi;
+                    }
+                    bi.StreamSource = ms;
+                    bi.EndInit();
+                    bi.Freeze();
+                }
+                return bi;
+            });
+        }
+        public static BitmapImage? GetImage(string imagePath)
         {
             try
             {
-                BitmapImage bitmap = null;
+                BitmapImage? bitmap = null;
 
                 if (imagePath.StartsWith("pack://"))
                 {
@@ -122,6 +150,7 @@ namespace DeskTopTimer
                 {
                     bitmap = new BitmapImage();
                     bitmap.BeginInit();
+                    bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
                     bitmap.CacheOption = BitmapCacheOption.OnLoad;
                     using (Stream ms = new MemoryStream(File.ReadAllBytes(imagePath)))
                     {
@@ -616,8 +645,6 @@ namespace DeskTopTimer
     {
         public List<string>? webUrls{set;get;} 
     }
-
-    
 
     /// <summary>
     /// string 唯一
