@@ -1410,12 +1410,12 @@ namespace DeskTopTimer
                         {
                             if (File.Exists(CurrentPreviewFile))
                             {
-                                lock(_removeList)
+                                lock (_removeList)
                                 {
                                     _removeList.Add(CurrentPreviewFile);//获取到新的图像就可以去除上一个了
                                 }
                             }
-                                
+
                             CurrentPreviewFile = curUrl;
                             Trace.WriteLine($"正在生成：{curUrl}");
                             CurrentSePic = null;
@@ -1508,14 +1508,20 @@ namespace DeskTopTimer
                                                 });
 
                                             }
-                                            Trace.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次涩涩{SeletctedSeSe}");
+                                            //Trace.WriteLine($"{DateTime.Now.ToLocalTime()}请求一次涩涩{SeletctedSeSe}");
+                                            Trace.WriteLine($"{new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds()}请求一次涩涩{SeletctedSeSe}");
                                             break;
 
                                         }
                                     case WebRequestsTool.wallhavenUrl:
                                         {
+                                            //Trace.WriteLine($"with count {WallHavenCache.Count}");
                                             if (WallHavenCache.Count <= 0 && !_IsWallHavaenRequestStarted)
+                                            {
+                                                Trace.WriteLine($"{new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds()} 进入cache");
                                                 ToGetWallHavenCache();
+                                            }
+
                                             if (WallHavenCache.Count > 0)
                                             {
                                                 var str = WallHavenCache.FirstOrDefault();
@@ -1533,9 +1539,9 @@ namespace DeskTopTimer
                                                 }
                                                 if (isAddSuccess && WallHavenCache.Contains(str))
                                                 {
-                                                   
-                                                        WallHavenCache.Remove(str);
-                                                    
+
+                                                    WallHavenCache.Remove(str);
+
                                                 }
                                             }
                                             break;
@@ -1587,7 +1593,8 @@ namespace DeskTopTimer
                             //}
                             _IsWritingNow = false;
                             //var SleepCount = new Random().Next(100, 1000) % 1000;
-                            Thread.Sleep(100);
+                            //while (SeSeCache.Count > 2)
+                                Thread.Sleep(100);
                             //AutoClean();
                         }
                     }
@@ -1680,83 +1687,90 @@ namespace DeskTopTimer
         /// <summary>
         /// 从wallHaven里获取
         /// </summary>
-        private void ToGetWallHavenCache()
+        private async void ToGetWallHavenCache()
         {
+
             if (_IsWallHavaenRequestStarted)
                 return;
             _IsWallHavaenRequestStarted = true;
 
-            Task.Run(async () =>
+
+            var time = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
+            try
             {
+                Trace.WriteLine($"{time}添加一次WallHavenCache");
+                if (_actualPageIndex <= 0)
+                    _actualPageIndex = 1;
+                else
+                    _actualPageIndex++;
+                var query = new WebProcess.WallhavenRequestQuery();
+                query.atleast = "";
+                query.queryCore = new WebProcess.WallhavenRequestQueryCore();
+                query.sorting = WebProcess.WallHavenSorting.toplist;
+                query.topRange = searchOrderString;
+                query.catagories.none = false;
+                query.catagories.people = IsPeopleEnable;
+                query.catagories.anime = IsAnimationEnable;
+                query.catagories.general = IsGeneralEnable;
+                query.resolutions = "";
+                query.ratios = "";
+                query.purity.none = false;
+                query.purity.sfw = true;
+                query.purity.sketchy = true;
+                query.page = _actualPageIndex;
+                if (!string.IsNullOrEmpty(WallHavenSearchKeyWords))
+                    query.queryCore.addTags = new List<string>() { WallHavenSearchKeyWords };
+                WebProcess.WallhavenResponse? response = null;
                 try
                 {
-                    Trace.WriteLine("添加一次WallHavenCache");
-                    if (_actualPageIndex <= 0)
-                        _actualPageIndex = 1;
-                    else
-                        _actualPageIndex++;
-                    var query = new WebProcess.WallhavenRequestQuery();
-                    query.atleast = "";
-                    query.queryCore = new WebProcess.WallhavenRequestQueryCore();
-                    query.sorting = WebProcess.WallHavenSorting.toplist;
-                    query.topRange = searchOrderString;
-                    query.catagories.none = false;
-                    query.catagories.people = IsPeopleEnable;
-                    query.catagories.anime = IsAnimationEnable;
-                    query.catagories.general = IsGeneralEnable;
-                    query.resolutions = "";
-                    query.ratios = "";
-                    query.purity.none = false;
-                    query.purity.sfw = true;
-                    query.purity.sketchy = true;
-                    query.page = _actualPageIndex;
-                    if (!string.IsNullOrEmpty(WallHavenSearchKeyWords))
-                        query.queryCore.addTags = new List<string>() { WallHavenSearchKeyWords };
-                    WebProcess.WallhavenResponse? response = null;
-                    try
-                    {
-                        response = await WebRequestsTool.RequestWallHavenPic(query);
-                    }
-                    catch (Exception ex)
-                    {
-                        Trace.WriteLine(ex);
-                    }
-                    if (response != null && response.meta != null)
-                    {
-                        TotalPage = response.meta.last_page;
-                        response.data?.ForEach(async (x) =>
-                        {
-                            if (string.IsNullOrEmpty(x?.path))
-                                return;
-                            Guid guid = Guid.NewGuid();
-                            var curFileName = DateTime.Now.ToString($"yyyy_MM_dd_HH_mm_ss_FFFF_{guid}");
-                            string res = "";
-                            try
-                            {
-                                res = await x.path.DownloadFileAsync(FileMapper.NormalSeSePictureDir, curFileName);
-                            }
-                            catch (Exception ex)
-                            {
-                                Trace.WriteLine(ex);
-                            }
-                            if (!File.Exists(res))
-                                return;
-                          
-                            WallHavenCache.Add(res);
-                            
-                        });
-                        CurPage = response.meta.current_page;
-                    }
+                    response = await WebRequestsTool.RequestWallHavenPic(query);
+                    if (response == null)
+                        Trace.WriteLine($"{time}response Get NUll");
                 }
                 catch (Exception ex)
                 {
                     Trace.WriteLine(ex);
                 }
-                finally
+                if (response != null && response.meta != null)
                 {
-                    _IsWallHavaenRequestStarted = false;
+                    TotalPage = response.meta.last_page;
+                    Trace.WriteLine($"{time}:{response.data?.Count}");
+                    response.data?.ForEach(async (x) =>
+                    {
+                        if (string.IsNullOrEmpty(x?.path))
+                            return;
+                        Guid guid = Guid.NewGuid();
+                        var curFileName = DateTime.Now.ToString($"yyyy_MM_dd_HH_mm_ss_FFFF_{guid}");
+                        string res = "";
+                        try
+                        {
+                            res = await x.path.DownloadFileAsync(FileMapper.NormalSeSePictureDir, curFileName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Trace.WriteLine(ex);
+                        }
+                        if (!File.Exists(res))
+                            return;
+
+                     WallHavenCache.Add(res);
+
+                            });
+                    CurPage = response.meta.current_page;
                 }
-            });
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex);
+            }
+            finally
+            {
+                _IsWallHavaenRequestStarted = false;
+                Trace.WriteLine($"{time}结束WallHavenCache{WallHavenCache.Count}");
+                if(WallHavenCache.Count<=0)
+                    _actualPageIndex --;
+            }
+
         }
 
         #endregion
@@ -1981,7 +1995,7 @@ namespace DeskTopTimer
                 try
                 {
                     var markList = new List<string>();
-                    lock(_removeList)
+                    lock (_removeList)
                     {
                         foreach (var itr in _removeList)
                         {
