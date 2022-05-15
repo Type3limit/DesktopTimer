@@ -150,7 +150,7 @@ namespace DeskTopTimer
 
         private void AddTraceListener()
         {
-           
+            LogHelper.ClearLogFiles();
             StreamWriter writer = new StreamWriter(FileMapper.CurrentLogFile, false);
             TextWriterTraceListener listener = new TextWriterTraceListener(writer, "log");
             //TextWriterTraceListener listener = new TextWriterTraceListener(logfile, "log");

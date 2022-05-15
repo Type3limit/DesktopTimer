@@ -889,5 +889,21 @@ namespace DeskTopTimer
             return Icon.ExtractAssociatedIcon(Path);
         }
     }
-
+    public static class LogHelper
+    {
+        public static void ClearLogFiles()
+        {
+            var Dirs = Directory.EnumerateDirectories(FileMapper.CurrentLogFileDir);
+            foreach(var itr in Dirs)
+            {
+                if (!Directory.Exists(itr))
+                    continue;
+                DirectoryInfo info = new DirectoryInfo(itr);
+                if((info.LastAccessTime - DateTime.Now) > TimeSpan.FromDays(15))
+                {
+                    info.Delete(true);
+                }
+            }
+        }
+    }
 }
