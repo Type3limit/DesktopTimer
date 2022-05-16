@@ -137,6 +137,7 @@ namespace DeskTopTimer
                 {
                     bitmap = new BitmapImage();
                     bitmap.BeginInit();
+                    bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
                     bitmap.CacheOption = BitmapCacheOption.OnLoad;
                     Uri current;
                     if (Uri.TryCreate(imagePath, UriKind.RelativeOrAbsolute, out current))

@@ -347,6 +347,15 @@
                                 <CheckBox Content="真人" IsChecked="{Binding IsPeopleEnable, Mode=TwoWay}" />
                             </StackPanel>
 
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock FontSize="12" Text="热度排序:" VerticalAlignment="Center"/>
+                                <ComboBox
+                                    Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=3}"
+                                    BorderThickness="0"
+                                    ItemsSource="{Binding OrderLists}"
+                                    SelectedItem="{Binding SelectedOrder, Mode=TwoWay}" />
+                            </StackPanel>
+
                             <Button
                                 x:Name="StartSearchButton"
                                 Margin="10,10"

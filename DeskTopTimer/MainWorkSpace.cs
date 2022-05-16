@@ -1418,7 +1418,6 @@ namespace DeskTopTimer
 
                             CurrentPreviewFile = curUrl;
                             Trace.WriteLine($"正在生成：{curUrl}");
-                            CurrentSePic = null;
                             CurrentSePic = await ImageTool.LoadImg(curUrl);
                         }
 
@@ -1594,7 +1593,7 @@ namespace DeskTopTimer
                             _IsWritingNow = false;
                             //var SleepCount = new Random().Next(100, 1000) % 1000;
                             //while (SeSeCache.Count > 2)
-                                Thread.Sleep(100);
+                            Thread.Sleep(100);
                             //AutoClean();
                         }
                     }
@@ -1738,24 +1737,31 @@ namespace DeskTopTimer
                     response.data?.ForEach(async (x) =>
                     {
                         if (string.IsNullOrEmpty(x?.path))
+                        {
                             return;
+                        }
+
                         Guid guid = Guid.NewGuid();
                         var curFileName = DateTime.Now.ToString($"yyyy_MM_dd_HH_mm_ss_FFFF_{guid}");
                         string res = "";
                         try
                         {
-                            res = await x.path.DownloadFileAsync(FileMapper.NormalSeSePictureDir, curFileName);
+                            res = await x.path.DownloadFileAsync(FileMapper.NormalSeSePictureDir,curFileName);
                         }
                         catch (Exception ex)
                         {
                             Trace.WriteLine(ex);
                         }
                         if (!File.Exists(res))
+                        {
+                            Trace.WriteLine($"文件不存在{res}");
                             return;
+                        }
+
 
                      WallHavenCache.Add(res);
 
-                            });
+                    });
                     CurPage = response.meta.current_page;
                 }
             }
