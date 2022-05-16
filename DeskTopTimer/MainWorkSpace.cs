@@ -567,7 +567,11 @@ namespace DeskTopTimer
                 if (isOpenSettingFlyout != value)
                 {
                     SetProperty(ref isOpenSettingFlyout, value);
-                    WriteCurrentSettingToJson();
+                    if(!value)
+                    {
+                        WriteCurrentSettingToJson();
+                    }
+
                 }
             }
         }
@@ -811,7 +815,7 @@ namespace DeskTopTimer
         public volatile bool _IsInitComplete = false;
         Thread? CacheThread = null;
         Thread? PreviewThread = null;
-
+        CancellationTokenSource? WallHavenRequestToken = null;
         /// <summary>
         /// 本地文件记录
         /// </summary>
@@ -1515,7 +1519,7 @@ namespace DeskTopTimer
                                     case WebRequestsTool.wallhavenUrl:
                                         {
                                             //Trace.WriteLine($"with count {WallHavenCache.Count}");
-                                            if (WallHavenCache.Count <= 0 && !_IsWallHavaenRequestStarted)
+                                            if (WallHavenCache.Count <= 0 && !_IsWallHavaenRequestStarted&& WallHavenRequestToken==null)
                                             {
                                                 Trace.WriteLine($"{new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds()} 进入cache");
                                                 ToGetWallHavenCache();
@@ -1692,8 +1696,14 @@ namespace DeskTopTimer
             if (_IsWallHavaenRequestStarted)
                 return;
             _IsWallHavaenRequestStarted = true;
-
-
+            if(WallHavenRequestToken!=null)
+            {
+                WallHavenRequestToken.Cancel();
+                while (WallHavenRequestToken != null)
+                    Thread.Sleep(10);
+                
+            }
+            WallHavenRequestToken = new CancellationTokenSource();
             var time = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
             try
             {
@@ -1723,6 +1733,8 @@ namespace DeskTopTimer
                 try
                 {
                     response = await WebRequestsTool.RequestWallHavenPic(query);
+                    if (WallHavenRequestToken.IsCancellationRequested)
+                        return;
                     if (response == null)
                         Trace.WriteLine($"{time}response Get NUll");
                 }
@@ -1734,34 +1746,34 @@ namespace DeskTopTimer
                 {
                     TotalPage = response.meta.last_page;
                     Trace.WriteLine($"{time}:{response.data?.Count}");
-                    response.data?.ForEach(async (x) =>
+                    int addCount = 0;
+                    foreach(var x in response?.data)
                     {
+                       
                         if (string.IsNullOrEmpty(x?.path))
-                        {
-                            return;
-                        }
-
+                            continue ;
                         Guid guid = Guid.NewGuid();
                         var curFileName = DateTime.Now.ToString($"yyyy_MM_dd_HH_mm_ss_FFFF_{guid}");
+                        var exten = "."+x?.file_type?.Split('/').LastOrDefault();
                         string res = "";
                         try
                         {
-                            res = await x.path.DownloadFileAsync(FileMapper.NormalSeSePictureDir,curFileName);
+                            res = await x.path.DownloadFileAsync(FileMapper.NormalSeSePictureDir, curFileName+ exten, 4096, WallHavenRequestToken.Token);
                         }
                         catch (Exception ex)
                         {
                             Trace.WriteLine(ex);
                         }
-                        if (!File.Exists(res))
-                        {
-                            Trace.WriteLine($"文件不存在{res}");
-                            return;
-                        }
+                        if (WallHavenRequestToken.IsCancellationRequested)
+                            break;
 
+                        var TotalFileName = Path.Combine(FileMapper.NormalSeSePictureDir, curFileName + exten);
+                        if (!File.Exists(TotalFileName))
+                            continue;
 
-                     WallHavenCache.Add(res);
-
-                    });
+                        WallHavenCache.Add(TotalFileName);
+                        Trace.WriteLine($"Add Count with{++addCount}，Path:{TotalFileName}");
+                     }
                     CurPage = response.meta.current_page;
                 }
             }
@@ -1775,6 +1787,7 @@ namespace DeskTopTimer
                 Trace.WriteLine($"{time}结束WallHavenCache{WallHavenCache.Count}");
                 if(WallHavenCache.Count<=0)
                     _actualPageIndex --;
+                WallHavenRequestToken = null;
             }
 
         }
