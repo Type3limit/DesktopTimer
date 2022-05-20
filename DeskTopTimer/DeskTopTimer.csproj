@@ -100,6 +100,10 @@
     <PackageReference Update="chromiumembeddedframework.runtime.win-x86" Version="100.0.14" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="ChatRoom\Views\" />
+  </ItemGroup>
+
 	
 	
 </Project>
