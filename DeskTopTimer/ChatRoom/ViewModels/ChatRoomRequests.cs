@@ -330,10 +330,12 @@ namespace DeskTopTimer.ChatRoom.ViewModels
         public async Task<Response<ChatUserToken>?> User_GetUserToken(string UserID,string ClientID,CancellationTokenSource? cancellation = null)
         {
             var request = WithRequestHeader("admin/user/get_token");
-            var JOb = new JObject();
-            JOb.Add("userId",UserID);
-            JOb.Add("clientId",ClientID);
-            JOb.Add("platform",3);
+            var JOb = new JObject
+            {
+                { "userId", UserID },
+                { "clientId", ClientID },
+                { "platform", 3 }
+            };
             return await PostJsonRequest<ChatUserToken>(request,JOb.ToString(),cancellation);
         }
         /// <summary>
@@ -348,11 +350,13 @@ namespace DeskTopTimer.ChatRoom.ViewModels
         public async Task<Response<string>?> User_CreateAccount(string name,string disPlayName,string UserId="",string portrait="",CancellationTokenSource? cancellation = null)
         {
             var request = WithRequestHeader("admin/user/create");
-            JObject JOb = new JObject();
-            JOb.Add("userId",UserId);
-            JOb.Add("name",name);
-            JOb.Add("displayName",disPlayName);
-            JOb.Add("portrait",portrait);
+            JObject JOb = new JObject
+            {
+                { "userId", UserId },
+                { "name", name },
+                { "displayName", disPlayName },
+                { "portrait", portrait }
+            };
             return await PostJsonRequest<string>(request, JOb.ToString(), cancellation);
         }
         [Flags]
@@ -392,7 +396,7 @@ namespace DeskTopTimer.ChatRoom.ViewModels
         public async Task<Response<UserInfo>?> User_GetUserInfo(string userId = "",string name="",string mobile="", CancellationTokenSource? cancellation = null)
         {
             var request = WithRequestHeader("admin/user/get_info");
-            JObject JOb = new JObject();
+            var JOb = new JObject();
             if(!string.IsNullOrEmpty(userId))
                 JOb.Add("userId",userId);
             else if(!string.IsNullOrEmpty(name))
@@ -450,14 +454,46 @@ namespace DeskTopTimer.ChatRoom.ViewModels
         public async Task<Response?> Friends_SetFriends(string userId, string targetId, bool AreWeFirends, CancellationTokenSource? cancellation = null)
         {
             var request = WithRequestHeader("admin/friend/status");
-            JObject JOb = new JObject();
-            JOb.Add("userId",userId);
-            JOb.Add("friendUid",targetId);
-            JOb.Add("status",AreWeFirends?0:1);
+            JObject JOb = new JObject
+            {
+                { "userId", userId },
+                { "friendUid", targetId },
+                { "status", AreWeFirends?0:1 }
+            };
             return await PostJsonRequest(request,JOb.ToString(),cancellation);
         }
+        /// <summary>
+        /// 获取好友列表
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        public async Task<Response<string>?> Friends_GetFriendLists(string userId, CancellationTokenSource? cancellation = null)
+        {
+            var request = WithRequestHeader("admin/friend/list");
+            JObject JOb = new JObject { { "userId", userId } };
 
-        
+            return await PostJsonRequest<string>(request, JOb.ToString(), cancellation);
+        }
+        /// <summary>
+        /// 设置备注
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="targetId"></param>
+        /// <param name="alias"></param>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        public async Task<Response?> Friends_SetAlias(string userId, string targetId, string alias, CancellationTokenSource? cancellation = null)
+        {
+            var request = WithRequestHeader("admin/friend/set_alias");
+            JObject JOb = new JObject
+            {
+                { "operator", userId },
+                { "targetId", targetId },
+                { "alias", alias }
+            };
+            return await PostJsonRequest(request, JOb.ToString(), cancellation);
+        }
         #endregion
     }
 }

@@ -19,6 +19,7 @@ using System.Windows.Markup;
 using System.Collections.ObjectModel;
 using MahApps.Metro.Controls.Dialogs;
 using Flurl.Http;
+using DeskTopTimer.AudioWaves;
 
 namespace DeskTopTimer
 {
@@ -616,7 +617,27 @@ namespace DeskTopTimer
 
         }
 
+        private bool isUsingAudioVisualizer = false;
+        public bool IsUsingAudiVisualizer
+        {
+            get=>isUsingAudioVisualizer;
+            set
+            {
+                if(isUsingAudioVisualizer!=value)
+                {
+                   SetProperty(ref isUsingAudioVisualizer,value);
+                    if(value)
+                    {
+                        audioVisualizer.StartRecord();
+                    }
+                    else
+                    {
+                        audioVisualizer.StopRecord();
 
+                    }
+                }
+            }
+        }
 
         #endregion
 
@@ -780,6 +801,17 @@ namespace DeskTopTimer
         /// 用于在线网络请求(使用flurl)
         /// </summary>
         WebRequestsTool WebRequestsTool = new WebRequestsTool();
+
+        private AudioWaveViewModels audioVisualizer = new AudioWaveViewModels();
+        public AudioWaveViewModels AudioVisualizer 
+        { 
+            get=>audioVisualizer;
+            set
+            {
+                SetProperty(ref audioVisualizer,value);
+            }
+        }
+
 
         /// <summary>
         /// 原始音量

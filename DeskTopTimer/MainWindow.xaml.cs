@@ -20,6 +20,7 @@ using CefSharp.Wpf;
 using DeskTopTimer.Native;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
+using NAudio.Dsp;
 using static System.Net.WebRequestMethods;
 
 namespace DeskTopTimer
@@ -229,27 +230,30 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow :MetroWindow    
+    public partial class MainWindow : MetroWindow
     {
         static MainWindow windowInstance = null;
-        static bool IsWindowShow= false;
+        static bool IsWindowShow = false;
         MainWorkSpace MainWorkSpace = new MainWorkSpace();
         bool IsPlayVideoSuccess = false;
         bool IsBackgroundVideoChangedRaised = false;
 
+        int rectangleCount = 100;
+        List<Rectangle> rects = new List<Rectangle>();
 
-        HotKey hiddenKey = new HotKey(Key.H,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnHiddenKey), "窗口隐藏\\显示");
-        HotKey flashKey = new HotKey(Key.F,KeyModifier.Shift|KeyModifier.Alt, new Action<HotKey>(OnFreshKey),"刷新");
-        HotKey setKey = new HotKey(Key.S,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnSetKey),"设置显示\\隐藏");
-        HotKey hiddenTimerKey = new HotKey(Key.T,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnHiddenTimerKey), "时间隐藏\\显示");
-        HotKey showWebFlyOut = new HotKey(Key.U,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnShowWebFlyOut),"网页地址显示\\隐藏");
+
+        HotKey hiddenKey = new HotKey(Key.H, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnHiddenKey), "窗口隐藏\\显示");
+        HotKey flashKey = new HotKey(Key.F, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnFreshKey), "刷新");
+        HotKey setKey = new HotKey(Key.S, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnSetKey), "设置显示\\隐藏");
+        HotKey hiddenTimerKey = new HotKey(Key.T, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnHiddenTimerKey), "时间隐藏\\显示");
+        HotKey showWebFlyOut = new HotKey(Key.U, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowWebFlyOut), "网页地址显示\\隐藏");
         HotKey showEveryThingFlyOut = new HotKey(Key.E, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowEveryThingFlyOut), "搜索本机文件");
 
         static public void OnHiddenKey(HotKey currentKey)
         {
-            if(windowInstance==null)
+            if (windowInstance == null)
                 return;
-            if(IsWindowShow)
+            if (IsWindowShow)
             {
                 windowInstance.Hide();
                 IsWindowShow = false;
@@ -267,12 +271,12 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
         {
             if (windowInstance == null)
                 return;
-            if(windowInstance?.DataContext is MainWorkSpace mainWorkSpace)
+            if (windowInstance?.DataContext is MainWorkSpace mainWorkSpace)
             {
                 mainWorkSpace?.INeedSeseImmediately.Execute(null);
             }
         }
-        
+
         static public void OnSetKey(HotKey currentKey)
         {
             if (windowInstance == null)
@@ -293,7 +297,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             }
         }
 
-        static public void OnShowWebFlyOut (HotKey currentKey)
+        static public void OnShowWebFlyOut(HotKey currentKey)
         {
             if (windowInstance == null)
                 return;
@@ -322,24 +326,24 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
         {
 
         }
-        private Dictionary<string,CookieVisitor> UrlCookies = new Dictionary<string, CookieVisitor>();
+        private Dictionary<string, CookieVisitor> UrlCookies = new Dictionary<string, CookieVisitor>();
 
-     
+
 
         public MainWindow()
         {
             InitializeComponent();
             //WindowBlur.SetIsEnabled(this, true);
-            
+
             this.DataContext = MainWorkSpace;
 
             WebView.LifeSpanHandler = new OpenPageSelf();
             BrowserSettings bset = new BrowserSettings();
-            
+
             bset.WindowlessFrameRate = 60;
             bset.WebGl = CefState.Enabled;
             WebView.BrowserSettings = bset;
-            WebView.IsBrowserInitializedChanged += (x,y) => 
+            WebView.IsBrowserInitializedChanged += (x, y) =>
             {
                 if (WebView.IsBrowserInitialized)
                 {
@@ -350,7 +354,8 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                         //requestContext.SetPreference("profile.default_content_setting_values.plugins", 1, out error);
                         //Trace.WriteLine(error);
                     });
-            } };
+                }
+            };
             WebView.FrameLoadStart += WebView_FrameLoadStart;
             WebView.FrameLoadEnd += WebView_FrameLoadEnd;
             MainWorkSpace.CloseWindow += MainWorkSpace_CloseWindow;
@@ -360,8 +365,8 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             MainWorkSpace.BusyNow += MainWorkSpace_BusyNow;
             Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
-            
-           
+
+
         }
 
         private async Task<MahApps.Metro.Controls.Dialogs.ProgressDialogController> MainWorkSpace_BusyNow(string busyReason)
@@ -374,7 +379,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
 
         private void WebView_FrameLoadStart(object sender, FrameLoadStartEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(async() =>
+            Application.Current.Dispatcher.Invoke(async () =>
             {
                 try
                 {
@@ -391,17 +396,17 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                         var ok = await WebView.GetCookieManager().SetCookieAsync(currentUrl, currentCookies);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Trace.WriteLine(ex);
                 }
-                
+
             });
         }
 
         private void WebView_FrameLoadEnd(object sender, FrameLoadEndEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(() => 
+            Application.Current.Dispatcher.Invoke(() =>
             {
                 try
                 {
@@ -420,7 +425,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                         }
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Trace.WriteLine(ex.ToString());
                 }
@@ -450,31 +455,31 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
 
         private async void MainWorkSpace_BackgroundVideoChanged(string VideoPath)
         {
-            if(MainWorkSpace.IsBackgroundUsingVideo)
+            if (MainWorkSpace.IsBackgroundUsingVideo)
             {
                 IsBackgroundVideoChangedRaised = true;
                 if (IsPlayVideoSuccess)
                 {
                     IsPlayVideoSuccess = await BackgroundVideo.Close();
-                    if(!IsPlayVideoSuccess)
+                    if (!IsPlayVideoSuccess)
                         Trace.WriteLine("CloseFailed");
                     else
-                        IsPlayVideoSuccess =false;
+                        IsPlayVideoSuccess = false;
                 }
 
-                if(!IsPlayVideoSuccess)
+                if (!IsPlayVideoSuccess)
                 {
-                    if(!string.IsNullOrEmpty(VideoPath))
+                    if (!string.IsNullOrEmpty(VideoPath))
                     {
                         IsPlayVideoSuccess = await BackgroundVideo.Open(new Uri(VideoPath));
                         IsPlayVideoSuccess = await BackgroundVideo.Play();
                     }
                     else
                     {
-       
+
                         Trace.WriteLine("已关闭当前文件");
                     }
-                    
+
                 }
                 else
                 {
@@ -485,7 +490,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             else
             {
                 IsPlayVideoSuccess = await BackgroundVideo.Close();
-                if(IsPlayVideoSuccess)
+                if (IsPlayVideoSuccess)
                     Trace.WriteLine("已关闭当前文件");
                 else
                     Trace.WriteLine("关闭当前文件失败");
@@ -497,117 +502,184 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             Task.Run(() =>
             {
                 MainWorkSpace.Init();
+                MainWorkSpace.AudioVisualizer.WaveDataChanged += AudioVisualizer_WaveDataChanged;
             });
+            Random random = new Random();
+            for (int i = 0; i < rectangleCount; i++)
+            {
+                //var offsetPart = random.Next()%10;
+                //GradientStopCollection gradients = new GradientStopCollection();
+                
+                //for (int j = 0 ;j<=offsetPart;j++)
+                //{
+                //    gradients.Add(new GradientStop(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255)),j/10d));
+                //}
+
+                rects.Add(new Rectangle()
+                {
+                    Stroke = new SolidColorBrush(Colors.White),
+                    StrokeThickness = 1,
+                    SnapsToDevicePixels=true,
+                    UseLayoutRounding=true,
+                    Fill = new SolidColorBrush(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255)))
+                    //Fill = new LinearGradientBrush(gradients) { StartPoint = new Point(0.5, 0), EndPoint = new Point(0.5, 1)}
+                });
+            }
+
+
+
             windowInstance = this;
             IsWindowShow = true;
             BackgroundVideo.MediaStateChanged += BackgroundVideo_MediaStateChanged;
             BackgroundVideo.MessageLogged += BackgroundVideo_MessageLogged;
-//#if DEBUG
-//            WebView.ShowDevTools();
-//#endif
-            MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() {hiddenKey,flashKey,setKey,hiddenTimerKey,showWebFlyOut,showEveryThingFlyOut});
+            //#if DEBUG
+            //            WebView.ShowDevTools();
+            //#endif
+            MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut, showEveryThingFlyOut });
         }
 
-        private void BackgroundVideo_MessageLogged(object? sender, Unosquare.FFME.Common.MediaLogMessageEventArgs e)
+        private void AudioVisualizer_WaveDataChanged(float[] samples)
         {
-            Trace.WriteLine(e.Message);
-        }
-
-        private void BackgroundVideo_MediaStateChanged(object? sender, Unosquare.FFME.Common.MediaStateChangedEventArgs e)
-        {
-            if(IsBackgroundVideoChangedRaised)
-            {
-                IsBackgroundVideoChangedRaised = false;
+            if (!MainWorkSpace.IsUsingAudiVisualizer)
                 return;
-            }
 
-            if(e.OldMediaState==Unosquare.FFME.Common.MediaPlaybackState.Play && e.MediaState== Unosquare.FFME.Common.MediaPlaybackState.Stop)
+            var widthPercent = ActualWidth / rectangleCount;//ActualWidth / finalData.Count();
+
+            int diffCount = samples.Length / rectangleCount;
+           
+            System.Windows.Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
             {
-                if(MainWorkSpace.IsLoopPlay)
-                    MainWorkSpace_BackgroundVideoChanged(MainWorkSpace.CurrentBackgroundVideoPath);
-            }
+                Stopwatch sp = new Stopwatch();
+                sp.Start();
+                for (int i = 0; i < rectangleCount; i++)
+                {
+                    var curRect = rects[i];
+                    curRect.Width = widthPercent;
+                    curRect.Height = (i * diffCount >= samples.Length) ? 1 : ((samples[i * diffCount] / 2)<0?0: (samples[i * diffCount] / 2));
+                    curRect.RenderTransform = new RotateTransform() { Angle = 180 };
+                    curRect.RadiusX = 4;
+                    curRect.RadiusY = 4;
+                   
+                    Canvas.SetLeft(curRect, (double)i * widthPercent);
+                    Canvas.SetTop(curRect, ActualHeight);
+                    if (AudioVisualizerDrawArea.Children.Contains(curRect))
+                        AudioVisualizerDrawArea.Children.Remove(curRect);
+                    AudioVisualizerDrawArea.Children.Add(curRect);
+                }
+                sp.Stop();
+                Debug.WriteLine($"drawing finish with {sp.ElapsedMilliseconds}ms");
+            }));
+
+
+        }
+    
+
+    private void BackgroundVideo_MessageLogged(object? sender, Unosquare.FFME.Common.MediaLogMessageEventArgs e)
+    {
+        Trace.WriteLine(e.Message);
+    }
+
+    private void BackgroundVideo_MediaStateChanged(object? sender, Unosquare.FFME.Common.MediaStateChangedEventArgs e)
+    {
+        if (IsBackgroundVideoChangedRaised)
+        {
+            IsBackgroundVideoChangedRaised = false;
+            return;
         }
 
-        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        if (e.OldMediaState == Unosquare.FFME.Common.MediaPlaybackState.Play && e.MediaState == Unosquare.FFME.Common.MediaPlaybackState.Stop)
         {
-            MainWorkSpace.CloseSese();
-        }
-
-        private void MainWorkSpace_CloseWindow()
-        {
-            Close();
-        }
-
-
-        private void Border_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (e.LeftButton == MouseButtonState.Pressed)
-                DragMove();
-        }
-
-        public void OpenOptionsWindow()
-        {
-            OptionsWindow optW = new OptionsWindow();
-            optW.Owner = this;
-            optW.Show();
-        }
-
-        private void root_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            //if(MainWorkSpace._IsInitComplete)
-            //    MainWorkSpace.WriteCurrentSettingToJson();
-        }
-
-
-        private void BrowseFileDirButton_Click(object sender, RoutedEventArgs e)
-        {
-            System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
-            var res= folderBrowserDialog.ShowDialog();
-            if(res == System.Windows.Forms.DialogResult.OK)
-            {
-                MainWorkSpace.VideoPathDir = folderBrowserDialog.SelectedPath;
-            }
-        }
-
-        private void TopMostMenu_Click(object sender, RoutedEventArgs e)
-        {
-            MainWorkSpace.IsTopMost = !MainWorkSpace.IsTopMost;
-        }
-
-        private void backButton_Click(object sender, RoutedEventArgs e)
-        {
-            WebView.Back();
-        }
-
-        private void forwordButton_Click(object sender, RoutedEventArgs e)
-        {
-            WebView.Forward();
-        }
-
-        private void JumpTo_Click(object sender, RoutedEventArgs e)
-        {
-            MainWorkSpace.ShowWebUrlCommand.Execute(null);
-            
-        }
-
-        private void CheckLocalStorageButton_Click(object sender, RoutedEventArgs e)
-        {
-            System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
-            var res = folderBrowserDialog.ShowDialog();
-            if (res == System.Windows.Forms.DialogResult.OK)
-            {
-                MainWorkSpace.CollectFileStoragePath = folderBrowserDialog.SelectedPath;
-            }
-        }
-
-        private void ListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            MainWorkSpace?.RunCurrentSelectedResultCommand?.Execute(null);
-        }
-
-        private void StartSearchButton_Click(object sender, RoutedEventArgs e)
-        {
-            MainWorkSpace?.StartSeach();
+            if (MainWorkSpace.IsLoopPlay)
+                MainWorkSpace_BackgroundVideoChanged(MainWorkSpace.CurrentBackgroundVideoPath);
         }
     }
+
+    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        MainWorkSpace.CloseSese();
+        MainWorkSpace.AudioVisualizer.StopRecord();
+    }
+
+    private void MainWorkSpace_CloseWindow()
+    {
+        Close();
+    }
+
+
+    private void Border_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton == MouseButtonState.Pressed)
+            DragMove();
+    }
+
+    public void OpenOptionsWindow()
+    {
+        OptionsWindow optW = new OptionsWindow();
+        optW.Owner = this;
+        optW.Show();
+    }
+
+    private void root_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        //if(MainWorkSpace._IsInitComplete)
+        //    MainWorkSpace.WriteCurrentSettingToJson();
+    }
+
+
+    private void BrowseFileDirButton_Click(object sender, RoutedEventArgs e)
+    {
+        System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+        var res = folderBrowserDialog.ShowDialog();
+        if (res == System.Windows.Forms.DialogResult.OK)
+        {
+            MainWorkSpace.VideoPathDir = folderBrowserDialog.SelectedPath;
+        }
+    }
+
+    private void TopMostMenu_Click(object sender, RoutedEventArgs e)
+    {
+        MainWorkSpace.IsTopMost = !MainWorkSpace.IsTopMost;
+    }
+
+    private void backButton_Click(object sender, RoutedEventArgs e)
+    {
+        WebView.Back();
+    }
+
+    private void forwordButton_Click(object sender, RoutedEventArgs e)
+    {
+        WebView.Forward();
+    }
+
+    private void JumpTo_Click(object sender, RoutedEventArgs e)
+    {
+        MainWorkSpace.ShowWebUrlCommand.Execute(null);
+
+    }
+
+    private void CheckLocalStorageButton_Click(object sender, RoutedEventArgs e)
+    {
+        System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+        var res = folderBrowserDialog.ShowDialog();
+        if (res == System.Windows.Forms.DialogResult.OK)
+        {
+            MainWorkSpace.CollectFileStoragePath = folderBrowserDialog.SelectedPath;
+        }
+    }
+
+    private void ListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        MainWorkSpace?.RunCurrentSelectedResultCommand?.Execute(null);
+    }
+
+    private void StartSearchButton_Click(object sender, RoutedEventArgs e)
+    {
+        MainWorkSpace?.StartSeach();
+    }
+
+    private void AudioVisual_Click(object sender, RoutedEventArgs e)
+    {
+        MainWorkSpace.IsUsingAudiVisualizer = !MainWorkSpace.IsUsingAudiVisualizer;
+    }
+}
 }

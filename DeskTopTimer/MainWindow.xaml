@@ -176,6 +176,20 @@
                     </StackPanel>
                 </MenuItem.Header>
             </MenuItem>
+
+
+            <MenuItem x:Name="AudioVisual" Click="AudioVisual_Click">
+                <MenuItem.Header>
+                    <StackPanel DataContext="{Binding RelativeSource={RelativeSource AncestorType={x:Type MenuItem}}, Path=DataContext}" Orientation="Horizontal">
+                        <CheckBox
+                            Foreground="White"
+                            IsChecked="{Binding IsUsingAudiVisualizer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            IsEnabled="False" />
+                        <TextBlock Text="音频可视化" />
+                    </StackPanel>
+                </MenuItem.Header>
+            </MenuItem>
+
             <MenuItem Command="{Binding CloseWindowCommand}" Header="关闭" />
 
         </ContextMenu>
@@ -348,7 +362,10 @@
                             </StackPanel>
 
                             <StackPanel Margin="0,5" Orientation="Horizontal">
-                                <TextBlock FontSize="12" Text="热度排序:" VerticalAlignment="Center"/>
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="热度排序:" />
                                 <ComboBox
                                     Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=3}"
                                     BorderThickness="0"
@@ -1026,10 +1043,15 @@
                 </ch:ChromiumWebBrowser.OpacityMask>
             </ch:ChromiumWebBrowser>
 
+            <Canvas
+                x:Name="AudioVisualizerDrawArea"
+                Panel.ZIndex="3"
+                IsHitTestVisible="False" />
+
             <Border
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Panel.ZIndex="1"
+                Panel.ZIndex="2"
                 Background="#77000000"
                 CornerRadius="6"
                 MouseMove="Border_MouseMove"
