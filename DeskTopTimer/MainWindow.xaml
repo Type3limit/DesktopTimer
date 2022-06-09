@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Con="clr-namespace:DeskTopTimer.Converter"
     xmlns:TB1="http://www.hardcodet.net/taskbar"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:ch="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
@@ -236,6 +237,11 @@
                                     Minimum="0"
                                     SmallChange="0.01"
                                     Value="{Binding BackgroundImageOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding BackgroundImageOpacity, StringFormat=P0}" />
                             </StackPanel>
 
                             <StackPanel Margin="0,5" Orientation="Horizontal">
@@ -409,6 +415,11 @@
                                     Maximum="256"
                                     Minimum="10"
                                     Value="{Binding TimeCenterFontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock
+                                    Margin="10,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding TimeCenterFontSize}" />
                             </StackPanel>
 
                             <StackPanel Margin="0,5" Orientation="Horizontal">
@@ -451,6 +462,10 @@
                                     Maximum="256"
                                     Minimum="10"
                                     Value="{Binding WeekendCenterFontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock
+                                    Margin="10,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding WeekendCenterFontSize}" />
                             </StackPanel>
 
                             <StackPanel Margin="0,5" Orientation="Horizontal">
@@ -707,6 +722,145 @@
                             </StackPanel>
 
 
+                            <Rectangle
+                                Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=2}"
+                                Height="1"
+                                Margin="0,5"
+                                Stroke="DimGray"
+                                StrokeDashArray="2,10" />
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="10"
+                                    Text="音频可视化选项：" />
+
+                            </StackPanel>
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="可视化矩形个数：" />
+
+                                <Slider
+                                    x:Name="RectNumberSlider"
+                                    Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=4, UpdateSourceTrigger=PropertyChanged}"
+                                    Maximum="300"
+                                    Minimum="10"
+                                    Value="{Binding AudioVisualizer.DrawingRectCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock
+                                    Margin="10,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding AudioVisualizer.DrawingRectCount}" />
+                            </StackPanel>
+
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="可视化矩形宽度：" />
+
+                                <Slider
+                                    x:Name="RectBorderWidthSlider"
+                                    Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=4, UpdateSourceTrigger=PropertyChanged}"
+                                    IsSnapToTickEnabled="True"
+                                    Maximum="10"
+                                    Minimum="0"
+                                    SmallChange="0.1"
+                                    TickFrequency="0.1"
+                                    Value="{Binding AudioVisualizer.DrawingRectBorderWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock
+                                    Margin="10,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding AudioVisualizer.DrawingRectBorderWidth, StringFormat=N1}" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="可视化矩形圆角：" />
+
+                                <Slider
+                                    x:Name="RectBorderRadiusSlider"
+                                    Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=4, UpdateSourceTrigger=PropertyChanged}"
+                                    IsSnapToTickEnabled="True"
+                                    Maximum="10"
+                                    Minimum="0"
+                                    SmallChange="0.1"
+                                    TickFrequency="0.1"
+                                    Value="{Binding AudioVisualizer.DrawingRectRadius, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock
+                                    Margin="10,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding AudioVisualizer.DrawingRectRadius, StringFormat=N1}" />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="可视化矩形透明度：" />
+
+                                <Slider
+                                    x:Name="RectBorderTransSlider"
+                                    Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=4, UpdateSourceTrigger=PropertyChanged}"
+                                    IsSnapToTickEnabled="True"
+                                    Maximum="1"
+                                    Minimum="0"
+                                    SmallChange="0.1"
+                                    TickFrequency="0.1"
+                                    Value="{Binding AudioVisualizer.VisualOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock
+                                    Margin="10,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding AudioVisualizer.VisualOpacity, StringFormat=P0}" />
+                            </StackPanel>
+
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="可视化矩形随机色：" />
+
+                                <CheckBox x:Name="VisualizerRandomColorChecker" IsChecked="{Binding AudioVisualizer.IsUsingRandomColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+
+                            <StackPanel
+                                Margin="0,5"
+                                Orientation="Horizontal"
+                                Visibility="{Binding ElementName=VisualizerRandomColorChecker, Path=IsChecked, Converter={StaticResource bool2RVisi}}">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="可视化矩形指定色值：" />
+
+                                <mah:ColorPicker
+                                    Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=4}"
+                                    BorderThickness="0"
+                                    SelectedColor="{Binding AudioVisualizer.SpColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                            </StackPanel>
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Text="可视化矩形边色值：" />
+
+                                <mah:ColorPicker
+                                    Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=4}"
+                                    BorderThickness="0"
+                                    SelectedColor="{Binding AudioVisualizer.SpStrokeColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                            </StackPanel>
 
 
 
@@ -1046,7 +1200,8 @@
             <Canvas
                 x:Name="AudioVisualizerDrawArea"
                 Panel.ZIndex="3"
-                IsHitTestVisible="False" />
+                IsHitTestVisible="False"
+                Opacity="{Binding AudioVisualizer.VisualOpacity}" />
 
             <Border
                 HorizontalAlignment="Center"

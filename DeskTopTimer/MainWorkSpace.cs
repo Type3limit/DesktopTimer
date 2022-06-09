@@ -625,7 +625,7 @@ namespace DeskTopTimer
             {
                 if(isUsingAudioVisualizer!=value)
                 {
-                   SetProperty(ref isUsingAudioVisualizer,value);
+                   
                     if(value)
                     {
                         audioVisualizer.StartRecord();
@@ -635,6 +635,7 @@ namespace DeskTopTimer
                         audioVisualizer.StopRecord();
 
                     }
+                    SetProperty(ref isUsingAudioVisualizer, value);
                 }
             }
         }

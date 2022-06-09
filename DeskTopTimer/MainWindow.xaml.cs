@@ -503,13 +503,14 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             {
                 MainWorkSpace.Init();
                 MainWorkSpace.AudioVisualizer.WaveDataChanged += AudioVisualizer_WaveDataChanged;
+                MainWorkSpace.AudioVisualizer.WaveParamChanged += AudioVisualizer_WaveParamChanged;
             });
             Random random = new Random();
             for (int i = 0; i < rectangleCount; i++)
             {
                 //var offsetPart = random.Next()%10;
                 //GradientStopCollection gradients = new GradientStopCollection();
-                
+
                 //for (int j = 0 ;j<=offsetPart;j++)
                 //{
                 //    gradients.Add(new GradientStop(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255)),j/10d));
@@ -519,8 +520,8 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                 {
                     Stroke = new SolidColorBrush(Colors.White),
                     StrokeThickness = 1,
-                    SnapsToDevicePixels=true,
-                    UseLayoutRounding=true,
+                    SnapsToDevicePixels = true,
+                    UseLayoutRounding = true,
                     Fill = new SolidColorBrush(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255)))
                     //Fill = new LinearGradientBrush(gradients) { StartPoint = new Point(0.5, 0), EndPoint = new Point(0.5, 1)}
                 });
@@ -538,148 +539,207 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut, showEveryThingFlyOut });
         }
 
+        private void AudioVisualizer_WaveParamChanged(int RectCount, double DrawingBorderWidth, bool UsingRadomColor, Color? spColor, double RectRadius)
+        {
+           
+                System.Windows.Application.Current?.Dispatcher?.Invoke(new Action(() =>
+                {
+                    MainWorkSpace.AudioVisualizer.WaveDataChanged -= AudioVisualizer_WaveDataChanged;
+                    for (int i = 0; i < rectangleCount; i++)
+                    {
+
+                        if (AudioVisualizerDrawArea.Children.Contains(rects[i]))
+                            AudioVisualizerDrawArea.Children.Remove(rects[i]);
+
+                    }
+
+                
+                rectangleCount = RectCount;
+                Random random = new Random();
+                for (int i = 0; i < rectangleCount; i++)
+                {
+                    var Brush = new SolidColorBrush(spColor??Colors.White);
+                    if (UsingRadomColor)
+                        Brush = new SolidColorBrush(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255)));
+                    rects.Add(new Rectangle()
+                    {
+                        Stroke = new SolidColorBrush(Colors.White),
+                        StrokeThickness = DrawingBorderWidth,
+                        SnapsToDevicePixels = true,
+                        UseLayoutRounding = true,
+                        RadiusX = RectRadius,
+                        RadiusY = RectRadius,
+                        Fill = Brush,
+                        //Fill = new LinearGradientBrush(gradients) { StartPoint = new Point(0.5, 0), EndPoint = new Point(0.5, 1)}
+                    });
+                }
+                    MainWorkSpace.AudioVisualizer.WaveDataChanged += AudioVisualizer_WaveDataChanged;
+                }));
+
+        }
+
         private void AudioVisualizer_WaveDataChanged(float[] samples)
         {
             if (!MainWorkSpace.IsUsingAudiVisualizer)
                 return;
+            if (samples.Length == 0)
+            {
+                System.Windows.Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+                {
+                    for (int i = 0; i < rectangleCount; i++)
+                    {
 
+                        if (AudioVisualizerDrawArea.Children.Contains(rects[i]))
+                            AudioVisualizerDrawArea.Children.Remove(rects[i]);
+
+                    }
+                }));
+                return;
+            }
             var widthPercent = ActualWidth / rectangleCount;//ActualWidth / finalData.Count();
 
             int diffCount = samples.Length / rectangleCount;
-           
+
             System.Windows.Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
             {
-                Stopwatch sp = new Stopwatch();
-                sp.Start();
+                //Stopwatch sp = new Stopwatch();
+                //sp.Start();
+                Random random = new Random();
                 for (int i = 0; i < rectangleCount; i++)
                 {
                     var curRect = rects[i];
                     curRect.Width = widthPercent;
-                    curRect.Height = (i * diffCount >= samples.Length) ? 1 : ((samples[i * diffCount] / 2)<0?0: (samples[i * diffCount] / 2));
+                    curRect.Height = (i * diffCount >= samples.Length) ? 1 : ((samples[i * diffCount] / 2) < 0 ? 0 : (samples[i * diffCount] / 2));
                     curRect.RenderTransform = new RotateTransform() { Angle = 180 };
-                    curRect.RadiusX = 4;
-                    curRect.RadiusY = 4;
-                   
+                    curRect.RadiusX = MainWorkSpace.AudioVisualizer.DrawingRectRadius;
+                    curRect.RadiusY = MainWorkSpace.AudioVisualizer.DrawingRectRadius;
+                    curRect.StrokeThickness = MainWorkSpace.AudioVisualizer.DrawingRectBorderWidth;
+                    curRect.Stroke = new SolidColorBrush(MainWorkSpace.AudioVisualizer.SpStrokeColor??Colors.White);
+                    curRect.Fill = MainWorkSpace.AudioVisualizer.IsUsingRandomColor? 
+                    ((curRect.Fill as SolidColorBrush)?.Color== MainWorkSpace.AudioVisualizer.SpColor? 
+                    new SolidColorBrush(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255))):curRect.Fill)
+                    : new SolidColorBrush(MainWorkSpace.AudioVisualizer.SpColor ?? Colors.White);
+                    //   new SolidColorBrush(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255))) : new SolidColorBrush(MainWorkSpace.AudioVisualizer.SpColor ?? Colors.White);
                     Canvas.SetLeft(curRect, (double)i * widthPercent);
                     Canvas.SetTop(curRect, ActualHeight);
                     if (AudioVisualizerDrawArea.Children.Contains(curRect))
                         AudioVisualizerDrawArea.Children.Remove(curRect);
                     AudioVisualizerDrawArea.Children.Add(curRect);
                 }
-                sp.Stop();
-                Debug.WriteLine($"drawing finish with {sp.ElapsedMilliseconds}ms");
+                //sp.Stop();
+                //Debug.WriteLine($"drawing finish with {sp.ElapsedMilliseconds}ms");
             }));
 
 
         }
-    
 
-    private void BackgroundVideo_MessageLogged(object? sender, Unosquare.FFME.Common.MediaLogMessageEventArgs e)
-    {
-        Trace.WriteLine(e.Message);
-    }
 
-    private void BackgroundVideo_MediaStateChanged(object? sender, Unosquare.FFME.Common.MediaStateChangedEventArgs e)
-    {
-        if (IsBackgroundVideoChangedRaised)
+        private void BackgroundVideo_MessageLogged(object? sender, Unosquare.FFME.Common.MediaLogMessageEventArgs e)
         {
-            IsBackgroundVideoChangedRaised = false;
-            return;
+            Trace.WriteLine(e.Message);
         }
 
-        if (e.OldMediaState == Unosquare.FFME.Common.MediaPlaybackState.Play && e.MediaState == Unosquare.FFME.Common.MediaPlaybackState.Stop)
+        private void BackgroundVideo_MediaStateChanged(object? sender, Unosquare.FFME.Common.MediaStateChangedEventArgs e)
         {
-            if (MainWorkSpace.IsLoopPlay)
-                MainWorkSpace_BackgroundVideoChanged(MainWorkSpace.CurrentBackgroundVideoPath);
+            if (IsBackgroundVideoChangedRaised)
+            {
+                IsBackgroundVideoChangedRaised = false;
+                return;
+            }
+
+            if (e.OldMediaState == Unosquare.FFME.Common.MediaPlaybackState.Play && e.MediaState == Unosquare.FFME.Common.MediaPlaybackState.Stop)
+            {
+                if (MainWorkSpace.IsLoopPlay)
+                    MainWorkSpace_BackgroundVideoChanged(MainWorkSpace.CurrentBackgroundVideoPath);
+            }
+        }
+
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            MainWorkSpace.CloseSese();
+            MainWorkSpace.AudioVisualizer.StopRecord();
+        }
+
+        private void MainWorkSpace_CloseWindow()
+        {
+            Close();
+        }
+
+
+        private void Border_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+                DragMove();
+        }
+
+        public void OpenOptionsWindow()
+        {
+            OptionsWindow optW = new OptionsWindow();
+            optW.Owner = this;
+            optW.Show();
+        }
+
+        private void root_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            //if(MainWorkSpace._IsInitComplete)
+            //    MainWorkSpace.WriteCurrentSettingToJson();
+        }
+
+
+        private void BrowseFileDirButton_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+            var res = folderBrowserDialog.ShowDialog();
+            if (res == System.Windows.Forms.DialogResult.OK)
+            {
+                MainWorkSpace.VideoPathDir = folderBrowserDialog.SelectedPath;
+            }
+        }
+
+        private void TopMostMenu_Click(object sender, RoutedEventArgs e)
+        {
+            MainWorkSpace.IsTopMost = !MainWorkSpace.IsTopMost;
+        }
+
+        private void backButton_Click(object sender, RoutedEventArgs e)
+        {
+            WebView.Back();
+        }
+
+        private void forwordButton_Click(object sender, RoutedEventArgs e)
+        {
+            WebView.Forward();
+        }
+
+        private void JumpTo_Click(object sender, RoutedEventArgs e)
+        {
+            MainWorkSpace.ShowWebUrlCommand.Execute(null);
+
+        }
+
+        private void CheckLocalStorageButton_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+            var res = folderBrowserDialog.ShowDialog();
+            if (res == System.Windows.Forms.DialogResult.OK)
+            {
+                MainWorkSpace.CollectFileStoragePath = folderBrowserDialog.SelectedPath;
+            }
+        }
+
+        private void ListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            MainWorkSpace?.RunCurrentSelectedResultCommand?.Execute(null);
+        }
+
+        private void StartSearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            MainWorkSpace?.StartSeach();
+        }
+
+        private void AudioVisual_Click(object sender, RoutedEventArgs e)
+        {
+            MainWorkSpace.IsUsingAudiVisualizer = !MainWorkSpace.IsUsingAudiVisualizer;
         }
     }
-
-    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
-    {
-        MainWorkSpace.CloseSese();
-        MainWorkSpace.AudioVisualizer.StopRecord();
-    }
-
-    private void MainWorkSpace_CloseWindow()
-    {
-        Close();
-    }
-
-
-    private void Border_MouseMove(object sender, MouseEventArgs e)
-    {
-        if (e.LeftButton == MouseButtonState.Pressed)
-            DragMove();
-    }
-
-    public void OpenOptionsWindow()
-    {
-        OptionsWindow optW = new OptionsWindow();
-        optW.Owner = this;
-        optW.Show();
-    }
-
-    private void root_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        //if(MainWorkSpace._IsInitComplete)
-        //    MainWorkSpace.WriteCurrentSettingToJson();
-    }
-
-
-    private void BrowseFileDirButton_Click(object sender, RoutedEventArgs e)
-    {
-        System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
-        var res = folderBrowserDialog.ShowDialog();
-        if (res == System.Windows.Forms.DialogResult.OK)
-        {
-            MainWorkSpace.VideoPathDir = folderBrowserDialog.SelectedPath;
-        }
-    }
-
-    private void TopMostMenu_Click(object sender, RoutedEventArgs e)
-    {
-        MainWorkSpace.IsTopMost = !MainWorkSpace.IsTopMost;
-    }
-
-    private void backButton_Click(object sender, RoutedEventArgs e)
-    {
-        WebView.Back();
-    }
-
-    private void forwordButton_Click(object sender, RoutedEventArgs e)
-    {
-        WebView.Forward();
-    }
-
-    private void JumpTo_Click(object sender, RoutedEventArgs e)
-    {
-        MainWorkSpace.ShowWebUrlCommand.Execute(null);
-
-    }
-
-    private void CheckLocalStorageButton_Click(object sender, RoutedEventArgs e)
-    {
-        System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
-        var res = folderBrowserDialog.ShowDialog();
-        if (res == System.Windows.Forms.DialogResult.OK)
-        {
-            MainWorkSpace.CollectFileStoragePath = folderBrowserDialog.SelectedPath;
-        }
-    }
-
-    private void ListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        MainWorkSpace?.RunCurrentSelectedResultCommand?.Execute(null);
-    }
-
-    private void StartSearchButton_Click(object sender, RoutedEventArgs e)
-    {
-        MainWorkSpace?.StartSeach();
-    }
-
-    private void AudioVisual_Click(object sender, RoutedEventArgs e)
-    {
-        MainWorkSpace.IsUsingAudiVisualizer = !MainWorkSpace.IsUsingAudiVisualizer;
-    }
-}
 }
