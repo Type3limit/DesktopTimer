@@ -1402,6 +1402,17 @@ namespace DeskTopTimer
                 curConfig.IsWebViewVisiable = IsWebViewVisible;
                 curConfig.WebSiteUrl = CurrentWebAddress;
                 curConfig.localCollectdPath = CollectFileStoragePath;
+
+                curConfig.isUsingAudioVisualize = IsUsingAudiVisualizer;
+                curConfig.audioVisualizerSetting.drawingRectCount = AudioVisualizer.DrawingRectCount;
+                curConfig.audioVisualizerSetting.drawingRectBorderThickness = AudioVisualizer.DrawingRectBorderWidth;
+                curConfig.audioVisualizerSetting.drawingRectRectRadius = AudioVisualizer.DrawingRectRadius;
+                curConfig.audioVisualizerSetting.usingRamdomColor = AudioVisualizer.IsUsingRandomColor;
+                curConfig.audioVisualizerSetting.drawingRectFillColor = (AudioVisualizer.SpColor??=Colors.White).ToString();
+                curConfig.audioVisualizerSetting.drawingRectStrokeColor = (AudioVisualizer.SpStrokeColor??=Colors.White).ToString();
+                curConfig.audioVisualizerSetting.visualOpacity = AudioVisualizer.VisualOpacity;
+                curConfig.audioVisualizerSetting.dataWeight = AudioVisualizer.DataWeight;
+
                 var str = JsonConvert.SerializeObject(curConfig);
                 File.WriteAllText(FileMapper.ConfigureJson, str);
             }
@@ -1852,8 +1863,6 @@ namespace DeskTopTimer
         {
             try
             {
-
-
                 _IsInitComplete = false;
                 ClearCacheDir();
                 var curConfig = JsonConvert.DeserializeObject<Configure>(File.ReadAllText(FileMapper.ConfigureJson));
@@ -1939,7 +1948,22 @@ namespace DeskTopTimer
                             CurrentBackgroundVideoPath = BackgroundVideos.FirstOrDefault();
                     }
                 }
+
+                IsUsingAudiVisualizer = curConfig.isUsingAudioVisualize;
+                AudioVisualizer.DrawingRectCount = curConfig.audioVisualizerSetting.drawingRectCount;
+
+                AudioVisualizer.DrawingRectBorderWidth =curConfig.audioVisualizerSetting.drawingRectBorderThickness;
+                AudioVisualizer.DrawingRectRadius = curConfig.audioVisualizerSetting.drawingRectRectRadius ;
+                AudioVisualizer.IsUsingRandomColor =  curConfig.audioVisualizerSetting.usingRamdomColor ;
+                AudioVisualizer.SpColor= ColorToStringHelper.HexConverter(curConfig.audioVisualizerSetting.drawingRectFillColor??="#FFFFFFFF");
+                AudioVisualizer.SpStrokeColor = ColorToStringHelper.HexConverter(curConfig.audioVisualizerSetting.drawingRectStrokeColor??="#FFFFFFFF");
+                AudioVisualizer.VisualOpacity = curConfig.audioVisualizerSetting.visualOpacity;
+                AudioVisualizer.DataWeight = curConfig.audioVisualizerSetting.dataWeight;
+
                 _IsInitComplete = true;
+
+
+
             }
             catch (Exception ex)
             {

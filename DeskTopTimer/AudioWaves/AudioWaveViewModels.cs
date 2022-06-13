@@ -112,6 +112,13 @@ namespace DeskTopTimer.AudioWaves
             }
         }
 
+        private double dataWeight = 0.5;
+        public double DataWeight
+        {
+            get=>dataWeight;
+            set=>SetProperty(ref dataWeight, value);
+        }
+
         #endregion
 
         public WasapiLoopbackCapture cap = new WasapiLoopbackCapture();
@@ -137,57 +144,73 @@ namespace DeskTopTimer.AudioWaves
             WaveParamChanged?.Invoke(DrawingRectCount, DrawingRectBorderWidth, IsUsingRandomColor,spColor,DrawingRectRadius);
         });
 
+        List<float> allSamples = new List<float>();
+        List<List<float>> channelSamples = new List<List<float>>();
+        List<float> samples = new List<float>();
+        List<float> dftData =new List<float>();
+
+        List<float> lastData = new List<float>();
+
         private void WaveDataIn(object? sender, WaveInEventArgs e)
         {
-            Task.Run(() =>
-            {
+            //Task.Run(() =>
+            //{
                 //Stopwatch sp= new Stopwatch();
                 //sp.Start();
-                float[] allSamples = Enumerable      // 提取数据中的采样
-                    .Range(0, e.BytesRecorded / 4)   // 除以四是因为, 缓冲区内每 4 个字节构成一个浮点数, 一个浮点数是一个采样
-                    .Select(i => BitConverter.ToSingle(e.Buffer, i * 4))  // 转换为 float
-                    .ToArray();    // 转换为数组
-                                   // 获取采样后, 在这里进行详细处理
+                //float[] allSamples = Enumerable      // 提取数据中的采样
+                //    .Range(0, e.BytesRecorded / 4)   // 除以四是因为, 缓冲区内每 4 个字节构成一个浮点数, 一个浮点数是一个采样
+                //    .Select(i => BitConverter.ToSingle(e.Buffer, i * 4))  // 转换为 float
+                //    .ToArray();    // 转换为数组
+                //                   // 获取采样后, 在这里进行详细处理
 
+                allSamples = Enumerable.Range(0, e.BytesRecorded / 4).Select(i => BitConverter.ToSingle(e.Buffer, i * 4)).ToList();    // 转换为数组
+                   // 获取采样后, 在这里进行详细处理
                 int channelCount = cap.WaveFormat.Channels;   // WasapiLoopbackCapture 的 WaveFormat 指定了当前声音的波形格式, 其中包含就通道数
 
-                float[][] channelSamples = Enumerable
+                channelSamples = Enumerable
                   .Range(0, channelCount)
                   .Select(channel => Enumerable
-                      .Range(0, allSamples.Length / channelCount)
+                      .Range(0, allSamples.Count / channelCount)
                       .Select(i => allSamples[channel + i * channelCount])
-                      .ToArray())
-                  .ToArray();
+                      .ToList())
+                  .ToList();
 
-                float[] samples = Enumerable.Range(0, allSamples.Length / channelCount)
+                samples = Enumerable.Range(0, allSamples.Count / channelCount)
                     .Select(index => Enumerable
                     .Range(0, channelCount)
                     .Select(channel => channelSamples[channel][index])
                     .Average())
-                    .ToArray();
+                    .ToList();
 
 
-                float log = (float)Math.Ceiling(Math.Log(samples.Length, 2));   // 取对数并向上取整
+                float log = (float)Math.Ceiling(Math.Log(samples.Count, 2));   // 取对数并向上取整
                 int newLen = (int)Math.Pow(2, log);                             // 计算新长度
                 float[] filledSamples = new float[newLen];
-                Array.Copy(samples, filledSamples, samples.Length);   // 拷贝到新数组
+                Array.Copy(samples.ToArray(), filledSamples, samples.Count);   // 拷贝到新数组
                 Complex[] complexSrc = filledSamples
                   .Select(v => new Complex() { X = v })        // 将采样转换为复数
                   .ToArray();
                 FastFourierTransform.FFT(false, (int)log, complexSrc);   // 进行傅里叶变换
 
-                Complex[] halfData = complexSrc.Take(complexSrc.Length / 2).ToArray();    // 一半的数据
-                float[] dftData = halfData
-                  .Select(v => (float)Math.Sqrt(v.X * v.X + v.Y * v.Y))  // 取复数的模
-                  .ToArray();    // 将复数结果转换为我们所需要的频率幅度
-                int count = dftData.Length / (cap.WaveFormat.SampleRate / (filledSamples.Length == 0 ? 1 : filledSamples.Length));
+                dftData = complexSrc.Take(complexSrc.Length / 2).Select(v => (float)Math.Sqrt(v.X * v.X + v.Y * v.Y)).ToList();   // 一半的数据
 
-
-                WaveDatas.Add(dftData.Take(count).ToArray());
+                    // 将复数结果转换为我们所需要的频率幅度
+                int count = dftData.Count / (cap.WaveFormat.SampleRate / (filledSamples.Length == 0 ? 1 : filledSamples.Length));
+                var TakeData = dftData.Take(count).ToList();
+                var FinalResult = new List<float>(TakeData);
+                if(lastData.Count>0)
+                {
+                     for(int i = 0 ;i< TakeData.Count&&i<lastData.Count;i++)
+                     {
+                          FinalResult[i] = TakeData[i] - (TakeData[i] - lastData[i])*(float)DataWeight;
+                     }
+                }
+                WaveDatas.Add(FinalResult.ToArray());
+                lastData = FinalResult;
                 //sp.Stop();
                 //Debug.WriteLine($"Process Audio with {sp.ElapsedMilliseconds} ms");
                 StartWaveDataInvokeThread();
-            });
+           // });
         }
 
         private void StartWaveDataInvokeThread()

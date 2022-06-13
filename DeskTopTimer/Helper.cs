@@ -637,7 +637,24 @@ namespace DeskTopTimer
         public bool isLoopPlay { set;get;}=true;
 
         public double volume { set;get;} =1d;
+
+        public bool isUsingAudioVisualize { set;get;}
+
+        public AudioVisualizerSetting audioVisualizerSetting { set;get;} = new AudioVisualizerSetting();
     }
+
+    public class AudioVisualizerSetting
+    {
+        public int drawingRectCount { set;get;}=100;
+        public double drawingRectBorderThickness { set;get;}=1;
+        public double drawingRectRectRadius { set;get;}=2;
+        public bool usingRamdomColor { set;get;} = true;
+        public string? drawingRectFillColor { set;get;} =Colors.White.ToString();
+        public string? drawingRectStrokeColor { set;get;} = Colors.White.ToString();
+        public double visualOpacity { set;get;}=1;
+        public double dataWeight { set;get;} = 0.5;
+    }
+
 
     /// <summary>
     /// 网络地址记录

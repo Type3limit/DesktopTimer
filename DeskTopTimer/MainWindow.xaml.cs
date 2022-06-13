@@ -238,7 +238,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
         bool IsPlayVideoSuccess = false;
         bool IsBackgroundVideoChangedRaised = false;
 
-        int rectangleCount = 100;
+        int rectangleCount = 100;   
         List<Rectangle> rects = new List<Rectangle>();
 
 
@@ -342,6 +342,8 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
 
             bset.WindowlessFrameRate = 60;
             bset.WebGl = CefState.Enabled;
+           
+
             WebView.BrowserSettings = bset;
             WebView.IsBrowserInitializedChanged += (x, y) =>
             {
@@ -501,9 +503,10 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
         {
             Task.Run(() =>
             {
-                MainWorkSpace.Init();
                 MainWorkSpace.AudioVisualizer.WaveDataChanged += AudioVisualizer_WaveDataChanged;
                 MainWorkSpace.AudioVisualizer.WaveParamChanged += AudioVisualizer_WaveParamChanged;
+                MainWorkSpace.Init();
+
             });
             Random random = new Random();
             for (int i = 0; i < rectangleCount; i++)
@@ -596,7 +599,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                 }));
                 return;
             }
-            var widthPercent = ActualWidth / rectangleCount;//ActualWidth / finalData.Count();
+            var widthPercent = AudioVisualizerDrawArea.ActualWidth / rectangleCount;//ActualWidth / finalData.Count();
 
             int diffCount = samples.Length / rectangleCount;
 
@@ -609,7 +612,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                 {
                     var curRect = rects[i];
                     curRect.Width = widthPercent;
-                    curRect.Height = (i * diffCount >= samples.Length) ? 1 : ((samples[i * diffCount] / 2) < 0 ? 0 : (samples[i * diffCount] / 2));
+                    curRect.Height = (i * diffCount >= samples.Length) ? 1 : ((samples[i * diffCount] ) < 0 ? 0 : (samples[i * diffCount] ));
                     curRect.RenderTransform = new RotateTransform() { Angle = 180 };
                     curRect.RadiusX = MainWorkSpace.AudioVisualizer.DrawingRectRadius;
                     curRect.RadiusY = MainWorkSpace.AudioVisualizer.DrawingRectRadius;
@@ -620,7 +623,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                     new SolidColorBrush(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255))):curRect.Fill)
                     : new SolidColorBrush(MainWorkSpace.AudioVisualizer.SpColor ?? Colors.White);
                     //   new SolidColorBrush(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255))) : new SolidColorBrush(MainWorkSpace.AudioVisualizer.SpColor ?? Colors.White);
-                    Canvas.SetLeft(curRect, (double)i * widthPercent);
+                    Canvas.SetLeft(curRect, (double)(i * widthPercent));
                     Canvas.SetTop(curRect, ActualHeight);
                     if (AudioVisualizerDrawArea.Children.Contains(curRect))
                         AudioVisualizerDrawArea.Children.Remove(curRect);

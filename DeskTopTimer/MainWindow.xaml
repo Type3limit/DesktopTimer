@@ -741,6 +741,31 @@
                                 <TextBlock
                                     VerticalAlignment="Center"
                                     FontSize="12"
+                                    Text="数据权重：" />
+                                <Slider
+                                    x:Name="DataWeightSlider"
+                                    Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=4, UpdateSourceTrigger=PropertyChanged}"
+                                    Maximum="0.9"
+                                    Minimum="0"
+                                    Value="{Binding AudioVisualizer.DataWeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock
+                                    Margin="10,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding AudioVisualizer.DataWeight, StringFormat=N2}" />
+
+
+
+                            </StackPanel>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="10"
+                                Text="(影响可视化矩形平滑度,值越大越平滑，但精度降低，建议值0.5)" />
+
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
                                     Text="可视化矩形个数：" />
 
                                 <Slider
@@ -761,7 +786,7 @@
                                 <TextBlock
                                     VerticalAlignment="Center"
                                     FontSize="12"
-                                    Text="可视化矩形宽度：" />
+                                    Text="可视化矩形边宽：" />
 
                                 <Slider
                                     x:Name="RectBorderWidthSlider"
@@ -1199,6 +1224,10 @@
 
             <Canvas
                 x:Name="AudioVisualizerDrawArea"
+                Width="{Binding WindowWidth}"
+                Height="{Binding WindowHeight}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
                 Panel.ZIndex="3"
                 IsHitTestVisible="False"
                 Opacity="{Binding AudioVisualizer.VisualOpacity}" />
