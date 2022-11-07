@@ -18,12 +18,14 @@ using System.Windows.Media;
 
 namespace DeskTopTimer
 {
+
+ 
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
     public partial class App : Application
     {
-        private static Semaphore semaphore;
+        private static Semaphore? semaphore;
         [DllImport("user32.dll")]
         public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
         /// <summary>

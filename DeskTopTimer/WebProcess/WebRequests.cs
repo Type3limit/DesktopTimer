@@ -169,10 +169,9 @@ namespace DeskTopTimer
 
                 if (res == null)
                     return null;
-                var jsonContent = res.GetJsonAsync();
-                if (jsonContent == null)
-                    return null;
-                var JsonOb = JObject.Parse(jsonContent?.ToString());
+                var jsonContent = await res.GetJsonAsync();
+
+                var JsonOb = jsonContent==null?null:JObject.Parse(jsonContent.ToString());
 
                 if (JsonOb == null)
                     return null;
@@ -192,12 +191,12 @@ namespace DeskTopTimer
                 int count = 0;
                 resourceValue.ForEach(async x =>
                 {
-                    if (x == null)
+                    if(x==null)
                         return;
                     if (resourceValue.Count > 1)
                         FileName += $"[{count++}]";
 
-                    var res = await RequestSeSePic(x?.ToString(), DownloadPath, FileName);
+                    var res = await RequestSeSePic(x.ToString(), DownloadPath, FileName);
                     if (!string.IsNullOrEmpty(res?.FirstOrDefault()))
                         resultLists.Add(res?.FirstOrDefault());
                 });
@@ -228,10 +227,9 @@ namespace DeskTopTimer
 
                 if (res == null)
                     return null;
-                var jsonContent = res.GetJsonAsync();
-                if (jsonContent == null)
-                    return null;
-                var JsonOb = JObject.Parse(jsonContent?.ToString());
+                var jsonContent = await res.GetJsonAsync();
+
+                var JsonOb = jsonContent ==null?null:JObject.Parse(jsonContent.ToString());
 
                 if (JsonOb == null)
                     return null;
@@ -256,7 +254,7 @@ namespace DeskTopTimer
                     if (resourceValue.Count > 1)
                         FileName += $"[{count++}]";
 
-                    var res = await RequestSeSePic(x?.ToString(), DownloadPath, FileName);
+                    var res = await RequestSeSePic(x.ToString(), DownloadPath, FileName);
                     if (!string.IsNullOrEmpty(res?.FirstOrDefault()))
                         resultLists.Add(res?.FirstOrDefault());
                 });

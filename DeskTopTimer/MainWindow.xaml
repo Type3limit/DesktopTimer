@@ -38,6 +38,9 @@
     Topmost="{Binding IsTopMost, UpdateSourceTrigger=PropertyChanged}"
     WindowStyle="None"
     mc:Ignorable="d">
+    <Window.DataContext>
+        <local:MainWorkSpace/>
+    </Window.DataContext>
     <Window.Resources>
         <ResourceDictionary>
             <Con:WidthHalfConverter x:Key="halfCon" />
@@ -53,6 +56,8 @@
             <Con:AltKeyToVisi x:Key="alt2visi" />
             <Con:WinKeyToVisi x:Key="Win2visi" />
             <Con:KeyToString x:Key="Key2String" />
+
+
         </ResourceDictionary>
 
     </Window.Resources>
@@ -195,6 +200,9 @@
 
         </ContextMenu>
     </Window.ContextMenu>
+
+
+
 
 
     <mah:MetroWindow.Flyouts>
@@ -399,9 +407,18 @@
                                 <ComboBox
                                     Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=3}"
                                     BorderThickness="0"
-                                    DisplayMemberPath="{Binding FamilyNames, Converter={StaticResource FontFamilyCon}}"
                                     ItemsSource="{Binding FontFamilies, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedFontFamily, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    SelectedItem="{Binding SelectedFontFamily, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontFamily="{Binding}"
+                                                Foreground="White"
+                                                Text="{Binding FamilyNames, Converter={StaticResource FontFamilyCon}}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </StackPanel>
 
                             <StackPanel Margin="0,5" Orientation="Horizontal">
@@ -445,9 +462,15 @@
                                     BorderThickness="0"
                                     ItemsSource="{Binding FontFamilies, UpdateSourceTrigger=PropertyChanged}"
                                     SelectedItem="{Binding SelectedWeekendFontFamily, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                    <ComboBox.DisplayMemberPath>
-                                        <Binding Converter="{StaticResource FontFamilyCon}" Path="FamilyNames" />
-                                    </ComboBox.DisplayMemberPath>
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontFamily="{Binding}"
+                                                Foreground="White"
+                                                Text="{Binding FamilyNames, Converter={StaticResource FontFamilyCon}}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
                                 </ComboBox>
                             </StackPanel>
 
@@ -1100,12 +1123,15 @@
 
         <Grid>
 
-
-            <!--<TB1:TaskbarIcon IconSource="{Binding TaskbarIcon}" ToolTip="桌面时钟" />-->
             <!--<TB1:TaskbarIcon
-                x:Name="TaskBar"
-                IconSource="pack://Application:,,,;component/Resources/timer-2.ico"
-                ToolTipText="桌面时钟" />-->
+                x:Name="myNotifyIcon"
+                IconSource="/timer-2.ico"
+                MenuActivation="LeftOrRightClick"
+                PopupActivation="DoubleClick"
+                ToolTipText="Fallback ToolTip for Windows xp"
+                Visibility="Visible" />-->
+
+
 
             <Border
                 x:Name="CurBorder"

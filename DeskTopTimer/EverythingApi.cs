@@ -257,10 +257,14 @@ namespace DeskTopTimer
         /// </summary>
         /// <param name="SearchKey"></param>
         /// <returns></returns>
-        public static async Task<IEnumerable<SearchResult>> SearchFile(string SearchKey, uint SortOrder = EVERYTHING_SORT_DATE_ACCESSED_ASCENDING, uint maxSearchCount = 100)
+        public static async Task<IEnumerable<SearchResult>?> SearchFile(string SearchKey, uint SortOrder = EVERYTHING_SORT_DATE_ACCESSED_ASCENDING, uint maxSearchCount = 100)
         {
-            return await Task.Run(async () =>
+            return await Task.Run(() =>
             {
+                try
+                {
+
+               
                 List<SearchResult> results = new List<SearchResult>();
 
                 Func<uint, SearchResult> ErrorStep = new Func<uint, SearchResult>((res) =>
@@ -337,6 +341,12 @@ namespace DeskTopTimer
 
                 Everything_Reset();
                 return results;
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine(ex);
+                    return null;
+                }
             });
         }
 

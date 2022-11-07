@@ -15,10 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="timer-2.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="Resources\DS-DIGI.TTF">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
@@ -33,6 +29,7 @@
     <PackageReference Include="FFME.Windows" Version="4.4.350" />
     <PackageReference Include="Flurl" Version="3.0.4" />
     <PackageReference Include="Flurl.Http" Version="3.2.2" />
+    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
     <PackageReference Include="MahApps.Metro" Version="2.4.9" />
     <PackageReference Include="MahApps.Metro.IconPacks" Version="4.11.0" />
     <PackageReference Include="Microsoft.Toolkit.Mvvm" Version="7.1.2" />
@@ -84,7 +81,7 @@
     <None Update="Resources\swscale-5.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\timer-2.ico">
+    <None Update="timer-2.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

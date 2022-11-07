@@ -1,27 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using CefSharp;
+﻿using CefSharp;
 using CefSharp.Wpf;
 using DeskTopTimer.Native;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
-using NAudio.Dsp;
-using static System.Net.WebRequestMethods;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace DeskTopTimer
 {
@@ -83,7 +75,7 @@ namespace DeskTopTimer
             }
         }
 
-        private Window _window;
+        private Window? _window;
 
         private void Attach(Window window)
         {
@@ -119,11 +111,13 @@ namespace DeskTopTimer
 
         private void AttachCore()
         {
-            EnableBlur(_window);
+            if (_window != null)
+                EnableBlur(_window);
         }
 
         private void DetachCore()
         {
+            if(_window!=null)
             _window.SourceInitialized += OnSourceInitialized;
         }
 
@@ -234,11 +228,11 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
     {
         static MainWindow windowInstance = null;
         static bool IsWindowShow = false;
-        MainWorkSpace MainWorkSpace = new MainWorkSpace();
+        MainWorkSpace MainWorkSpace = null;
         bool IsPlayVideoSuccess = false;
         bool IsBackgroundVideoChangedRaised = false;
 
-        int rectangleCount = 100;   
+        int rectangleCount = 100;
         List<Rectangle> rects = new List<Rectangle>();
 
 
@@ -247,7 +241,8 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
         HotKey setKey = new HotKey(Key.S, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnSetKey), "设置显示\\隐藏");
         HotKey hiddenTimerKey = new HotKey(Key.T, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnHiddenTimerKey), "时间隐藏\\显示");
         HotKey showWebFlyOut = new HotKey(Key.U, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowWebFlyOut), "网页地址显示\\隐藏");
-        HotKey showEveryThingFlyOut = new HotKey(Key.E, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowEveryThingFlyOut), "搜索本机文件");
+        //暂时屏蔽Everything api
+        //HotKey showEveryThingFlyOut = new HotKey(Key.E, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowEveryThingFlyOut), "搜索本机文件");
 
         static public void OnHiddenKey(HotKey currentKey)
         {
@@ -335,14 +330,14 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             InitializeComponent();
             //WindowBlur.SetIsEnabled(this, true);
 
-            this.DataContext = MainWorkSpace;
+            MainWorkSpace = (MainWorkSpace)this.DataContext;
 
             WebView.LifeSpanHandler = new OpenPageSelf();
             BrowserSettings bset = new BrowserSettings();
 
             bset.WindowlessFrameRate = 60;
             bset.WebGl = CefState.Enabled;
-           
+
 
             WebView.BrowserSettings = bset;
             WebView.IsBrowserInitializedChanged += (x, y) =>
@@ -455,7 +450,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             BackgroundVideo.Volume = value;
         }
 
-        private async void MainWorkSpace_BackgroundVideoChanged(string VideoPath)
+        private async void MainWorkSpace_BackgroundVideoChanged(string? VideoPath)
         {
             if (MainWorkSpace.IsBackgroundUsingVideo)
             {
@@ -539,29 +534,29 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             //#if DEBUG
             //            WebView.ShowDevTools();
             //#endif
-            MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut, showEveryThingFlyOut });
+            MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut });
         }
 
         private void AudioVisualizer_WaveParamChanged(int RectCount, double DrawingBorderWidth, bool UsingRadomColor, Color? spColor, double RectRadius)
         {
-           
-                System.Windows.Application.Current?.Dispatcher?.Invoke(new Action(() =>
+
+            System.Windows.Application.Current?.Dispatcher?.Invoke(new Action(() =>
+            {
+                MainWorkSpace.AudioVisualizer.WaveDataChanged -= AudioVisualizer_WaveDataChanged;
+                for (int i = 0; i < rectangleCount; i++)
                 {
-                    MainWorkSpace.AudioVisualizer.WaveDataChanged -= AudioVisualizer_WaveDataChanged;
-                    for (int i = 0; i < rectangleCount; i++)
-                    {
 
-                        if (AudioVisualizerDrawArea.Children.Contains(rects[i]))
-                            AudioVisualizerDrawArea.Children.Remove(rects[i]);
+                    if (AudioVisualizerDrawArea.Children.Contains(rects[i]))
+                        AudioVisualizerDrawArea.Children.Remove(rects[i]);
 
-                    }
+                }
 
-                
+
                 rectangleCount = RectCount;
                 Random random = new Random();
                 for (int i = 0; i < rectangleCount; i++)
                 {
-                    var Brush = new SolidColorBrush(spColor??Colors.White);
+                    var Brush = new SolidColorBrush(spColor ?? Colors.White);
                     if (UsingRadomColor)
                         Brush = new SolidColorBrush(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255)));
                     rects.Add(new Rectangle()
@@ -576,8 +571,8 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                         //Fill = new LinearGradientBrush(gradients) { StartPoint = new Point(0.5, 0), EndPoint = new Point(0.5, 1)}
                     });
                 }
-                    MainWorkSpace.AudioVisualizer.WaveDataChanged += AudioVisualizer_WaveDataChanged;
-                }));
+                MainWorkSpace.AudioVisualizer.WaveDataChanged += AudioVisualizer_WaveDataChanged;
+            }));
 
         }
 
@@ -599,7 +594,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                 }));
                 return;
             }
-            var widthPercent = AudioVisualizerDrawArea.ActualWidth / rectangleCount;//ActualWidth / finalData.Count();
+            var widthPercent = AudioVisualizerDrawArea.ActualWidth / (rectangleCount-1);//ActualWidth / finalData.Count();
 
             int diffCount = samples.Length / rectangleCount;
 
@@ -612,15 +607,15 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                 {
                     var curRect = rects[i];
                     curRect.Width = widthPercent;
-                    curRect.Height = (i * diffCount >= samples.Length) ? 1 : ((samples[i * diffCount] ) < 0 ? 0 : (samples[i * diffCount] ));
+                    curRect.Height = (i * diffCount >= samples.Length) ? 1 : ((samples[i * diffCount]) < 0 ? 0 : (samples[i * diffCount]));
                     curRect.RenderTransform = new RotateTransform() { Angle = 180 };
                     curRect.RadiusX = MainWorkSpace.AudioVisualizer.DrawingRectRadius;
                     curRect.RadiusY = MainWorkSpace.AudioVisualizer.DrawingRectRadius;
                     curRect.StrokeThickness = MainWorkSpace.AudioVisualizer.DrawingRectBorderWidth;
-                    curRect.Stroke = new SolidColorBrush(MainWorkSpace.AudioVisualizer.SpStrokeColor??Colors.White);
-                    curRect.Fill = MainWorkSpace.AudioVisualizer.IsUsingRandomColor? 
-                    ((curRect.Fill as SolidColorBrush)?.Color== MainWorkSpace.AudioVisualizer.SpColor? 
-                    new SolidColorBrush(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255))):curRect.Fill)
+                    curRect.Stroke = new SolidColorBrush(MainWorkSpace.AudioVisualizer.SpStrokeColor ?? Colors.White);
+                    curRect.Fill = MainWorkSpace.AudioVisualizer.IsUsingRandomColor ?
+                    ((curRect.Fill as SolidColorBrush)?.Color == MainWorkSpace.AudioVisualizer.SpColor ?
+                    new SolidColorBrush(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255))) : curRect.Fill)
                     : new SolidColorBrush(MainWorkSpace.AudioVisualizer.SpColor ?? Colors.White);
                     //   new SolidColorBrush(Color.FromRgb(Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255), Convert.ToByte(random.Next() % 255))) : new SolidColorBrush(MainWorkSpace.AudioVisualizer.SpColor ?? Colors.White);
                     Canvas.SetLeft(curRect, (double)(i * widthPercent));
@@ -659,8 +654,8 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
 
         private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
-            MainWorkSpace.CloseSese();
-            MainWorkSpace.AudioVisualizer.StopRecord();
+            MainWorkSpace?.CloseSese();
+            MainWorkSpace?.AudioVisualizer?.StopRecord();
         }
 
         private void MainWorkSpace_CloseWindow()

@@ -1,25 +1,22 @@
-﻿using Microsoft.Toolkit.Mvvm.ComponentModel;
+﻿using DeskTopTimer.AudioWaves;
+using DeskTopTimer.SubModels;
+using Flurl.Http;
+using MahApps.Metro.Controls.Dialogs;
+using Microsoft.Toolkit.Mvvm.ComponentModel;
 using Microsoft.Toolkit.Mvvm.Input;
+using Newtonsoft.Json;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using Newtonsoft.Json;
-using DeskTopTimer.SubModels;
 using System.Windows.Media;
-using System.Windows.Markup;
-using System.Collections.ObjectModel;
-using MahApps.Metro.Controls.Dialogs;
-using Flurl.Http;
-using DeskTopTimer.AudioWaves;
+using System.Windows.Media.Imaging;
 
 namespace DeskTopTimer
 {
@@ -127,11 +124,11 @@ namespace DeskTopTimer
             }
         }
 
-        private List<string> webAddresses = new List<string>();
+        private List<string>? webAddresses = new List<string>();
         /// <summary>
         /// 默认网站地址记录
         /// </summary>
-        public List<string> WebAddresses
+        public List<string>? WebAddresses
         {
             get => webAddresses;
             set => SetProperty(ref webAddresses, value);
@@ -568,7 +565,7 @@ namespace DeskTopTimer
                 if (isOpenSettingFlyout != value)
                 {
                     SetProperty(ref isOpenSettingFlyout, value);
-                    if(!value)
+                    if (!value)
                     {
                         WriteCurrentSettingToJson();
                     }
@@ -620,13 +617,13 @@ namespace DeskTopTimer
         private bool isUsingAudioVisualizer = false;
         public bool IsUsingAudiVisualizer
         {
-            get=>isUsingAudioVisualizer;
+            get => isUsingAudioVisualizer;
             set
             {
-                if(isUsingAudioVisualizer!=value)
+                if (isUsingAudioVisualizer != value)
                 {
-                   
-                    if(value)
+
+                    if (value)
                     {
                         audioVisualizer.StartRecord();
                     }
@@ -804,12 +801,12 @@ namespace DeskTopTimer
         WebRequestsTool WebRequestsTool = new WebRequestsTool();
 
         private AudioWaveViewModels audioVisualizer = new AudioWaveViewModels();
-        public AudioWaveViewModels AudioVisualizer 
-        { 
-            get=>audioVisualizer;
+        public AudioWaveViewModels AudioVisualizer
+        {
+            get => audioVisualizer;
             set
             {
-                SetProperty(ref audioVisualizer,value);
+                SetProperty(ref audioVisualizer, value);
             }
         }
 
@@ -843,6 +840,7 @@ namespace DeskTopTimer
         volatile bool _IsPreviewStarted = false;
         volatile bool _IsCacheStarted = false;
         volatile bool _IsWallHavaenRequestStarted = false;
+
         long _actualPageIndex = 0;
         volatile bool _IsSearchStarted = false;
         public volatile bool _IsInitComplete = false;
@@ -966,7 +964,7 @@ namespace DeskTopTimer
         /// </summary>
         public event CloseWindowHandler? CloseWindow;
 
-        public delegate void ChangeBackgroundVideoHandler(string VideoPath);
+        public delegate void ChangeBackgroundVideoHandler(string? VideoPath);
         /// <summary>
         /// 背景视频变更事件
         /// </summary>
@@ -1194,7 +1192,9 @@ namespace DeskTopTimer
                            _ShouldStopCurrentFileEnumrate = false;
                            _IsOneThreadPausedHere = false;
                        }
-                       var Con = await BusyNow?.Invoke("相关文件搜索中...");
+                       ProgressDialogController? Con = null;
+                       if (BusyNow!=null)
+                           Con = await BusyNow.Invoke("相关文件搜索中...");
                        try
                        {
 
@@ -1209,7 +1209,6 @@ namespace DeskTopTimer
                            if (res == null)
                                return;
                            var enumrator = res.GetEnumerator();
-                           Con?.CloseAsync();
                            while (enumrator.MoveNext() && !_ShouldStopCurrentFileEnumrate)
                            {
                                if (!enumrator.Current.HasResult)
@@ -1229,7 +1228,7 @@ namespace DeskTopTimer
                        finally
                        {
                            _IsEveryThingSearchStarted = false;
-
+                           Con?.CloseAsync();
                        }
                    });
 
@@ -1363,7 +1362,7 @@ namespace DeskTopTimer
         /// <summary>
         /// api切换时，重启两个线程
         /// </summary>
-        private async void ApiChanged()
+        private void ApiChanged()
         {
             if (IsOnlineSeSeMode && !IsBackgroundUsingVideo && !IsWebViewVisible)
             {
@@ -1389,8 +1388,8 @@ namespace DeskTopTimer
                 curConfig.flushTime = MaxSeSeCount;
                 curConfig.isTopmost = IsTopMost;
                 curConfig.isUsingVideoBackGround = IsBackgroundUsingVideo;
-                curConfig.timeFontIndex = FontFamilies.IndexOf(SelectedFontFamily) < 0 ? 0 : FontFamilies.IndexOf(SelectedFontFamily);
-                curConfig.weekendFontIndex = FontFamilies.IndexOf(SelectedWeekendFontFamily) < 0 ? 0 : FontFamilies.IndexOf(SelectedWeekendFontFamily);
+                curConfig.timeFontIndex = FontFamilies.IndexOf(SelectedFontFamily??FontFamilies.First()) < 0 ? 0 : FontFamilies.IndexOf(SelectedFontFamily ?? FontFamilies.First());
+                curConfig.weekendFontIndex = FontFamilies.IndexOf(SelectedWeekendFontFamily ?? FontFamilies.First()) < 0 ? 0 : FontFamilies.IndexOf(SelectedWeekendFontFamily ?? FontFamilies.First());
                 curConfig.videoDir = VideoPathDir;
                 curConfig.selectedVideoPath = CurrentBackgroundVideoPath;
                 curConfig.timeFontSize = TimeCenterFontSize;
@@ -1408,8 +1407,8 @@ namespace DeskTopTimer
                 curConfig.audioVisualizerSetting.drawingRectBorderThickness = AudioVisualizer.DrawingRectBorderWidth;
                 curConfig.audioVisualizerSetting.drawingRectRectRadius = AudioVisualizer.DrawingRectRadius;
                 curConfig.audioVisualizerSetting.usingRamdomColor = AudioVisualizer.IsUsingRandomColor;
-                curConfig.audioVisualizerSetting.drawingRectFillColor = (AudioVisualizer.SpColor??=Colors.White).ToString();
-                curConfig.audioVisualizerSetting.drawingRectStrokeColor = (AudioVisualizer.SpStrokeColor??=Colors.White).ToString();
+                curConfig.audioVisualizerSetting.drawingRectFillColor = (AudioVisualizer.SpColor ??= Colors.White).ToString();
+                curConfig.audioVisualizerSetting.drawingRectStrokeColor = (AudioVisualizer.SpStrokeColor ??= Colors.White).ToString();
                 curConfig.audioVisualizerSetting.visualOpacity = AudioVisualizer.VisualOpacity;
                 curConfig.audioVisualizerSetting.dataWeight = AudioVisualizer.DataWeight;
 
@@ -1563,7 +1562,7 @@ namespace DeskTopTimer
                                     case WebRequestsTool.wallhavenUrl:
                                         {
                                             //Trace.WriteLine($"with count {WallHavenCache.Count}");
-                                            if (WallHavenCache.Count <= 0 && !_IsWallHavaenRequestStarted&& WallHavenRequestToken==null)
+                                            if (WallHavenCache.Count <= 0 && !_IsWallHavaenRequestStarted && WallHavenRequestToken == null)
                                             {
                                                 Trace.WriteLine($"{new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds()} 进入cache");
                                                 ToGetWallHavenCache();
@@ -1634,15 +1633,10 @@ namespace DeskTopTimer
                                 }
                             };
                             currentAction.Invoke();
-                            //if (CurrentSePic == null)
-                            //{
-                            //    INeedSeseImmediately.Execute(null);
-                            //}
+
                             _IsWritingNow = false;
-                            //var SleepCount = new Random().Next(100, 1000) % 1000;
-                            //while (SeSeCache.Count > 2)
+
                             Thread.Sleep(100);
-                            //AutoClean();
                         }
                     }
                     catch (Exception ex)
@@ -1658,7 +1652,6 @@ namespace DeskTopTimer
                 });
             CacheThread.IsBackground = true;
             CacheThread?.Start();
-
             _IsCacheStarted = false;
             return true;
         }
@@ -1698,13 +1691,7 @@ namespace DeskTopTimer
         private void GetAllFont()
         {
             //InstalledFontCollection MyFont = new InstalledFontCollection();
-            FontFamily[] MyFontFamilies = Fonts.SystemFontFamilies.ToArray();
-            int Count = MyFontFamilies.Length;
-            for (int i = 0; i < Count; i++)
-            {
-
-                FontFamilies.Add(MyFontFamilies[i]);
-            }
+            FontFamilies= Fonts.SystemFontFamilies.ToList();
             SelectedFontFamily = FontFamilies.FirstOrDefault();
             SelectedWeekendFontFamily = FontFamilies.FirstOrDefault();
         }
@@ -1721,7 +1708,7 @@ namespace DeskTopTimer
                 Webs.webUrls.Add("https://hfiprogramming.github.io/mikutap/");
                 WriteWebSites();
             }
-            WebAddresses = Webs.webUrls;
+            WebAddresses = Webs?.webUrls;
         }
         /// <summary>
         /// 写入网站地址
@@ -1740,12 +1727,12 @@ namespace DeskTopTimer
             if (_IsWallHavaenRequestStarted)
                 return;
             _IsWallHavaenRequestStarted = true;
-            if(WallHavenRequestToken!=null)
+            if (WallHavenRequestToken != null)
             {
                 WallHavenRequestToken.Cancel();
                 while (WallHavenRequestToken != null)
                     Thread.Sleep(10);
-                
+
             }
             WallHavenRequestToken = new CancellationTokenSource();
             var time = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
@@ -1786,39 +1773,45 @@ namespace DeskTopTimer
                 {
                     Trace.WriteLine(ex);
                 }
-                if (response != null && response.meta != null)
+                if (response != null && response?.meta != null)
                 {
                     TotalPage = response.meta.last_page;
                     Trace.WriteLine($"{time}:{response.data?.Count}");
                     int addCount = 0;
-                    foreach(var x in response?.data)
-                    {
-                       
-                        if (string.IsNullOrEmpty(x?.path))
-                            continue ;
-                        Guid guid = Guid.NewGuid();
-                        var curFileName = DateTime.Now.ToString($"yyyy_MM_dd_HH_mm_ss_FFFF_{guid}");
-                        var exten = "."+x?.file_type?.Split('/').LastOrDefault();
-                        string res = "";
-                        try
-                        {
-                            res = await x.path.DownloadFileAsync(FileMapper.NormalSeSePictureDir, curFileName+ exten, 4096, WallHavenRequestToken.Token);
-                        }
-                        catch (Exception ex)
-                        {
-                            Trace.WriteLine(ex);
-                        }
-                        if (WallHavenRequestToken.IsCancellationRequested)
-                            break;
-
-                        var TotalFileName = Path.Combine(FileMapper.NormalSeSePictureDir, curFileName + exten);
-                        if (!File.Exists(TotalFileName))
-                            continue;
-
-                        WallHavenCache.Add(TotalFileName);
-                        Trace.WriteLine($"Add Count with{++addCount}，Path:{TotalFileName}");
-                     }
                     CurPage = response.meta.current_page;
+                    if (response.data!=null)
+                    {
+                        foreach (var x in response.data)
+                        {
+
+                            if (string.IsNullOrEmpty(x?.path))
+                                continue;
+                            Guid guid = Guid.NewGuid();
+                            var curFileName = DateTime.Now.ToString($"yyyy_MM_dd_HH_mm_ss_FFFF_{guid}");
+                            var exten = "." + x?.file_type?.Split('/').LastOrDefault();
+                            string res = "";
+                            try
+                            {
+                                if(x!=null)
+                                   res = await x.path.DownloadFileAsync(FileMapper.NormalSeSePictureDir, curFileName + exten, 4096, WallHavenRequestToken.Token);
+                            }
+                            catch (Exception ex)
+                            {
+                                Trace.WriteLine(ex);
+                            }
+                            if (WallHavenRequestToken.IsCancellationRequested)
+                                break;
+
+                            var TotalFileName = Path.Combine(FileMapper.NormalSeSePictureDir, curFileName + exten);
+                            if (!File.Exists(TotalFileName))
+                                continue;
+
+                            WallHavenCache.Add(TotalFileName);
+                            Trace.WriteLine($"Add Count with{++addCount}，Path:{TotalFileName}");
+                        }
+                    }
+                       
+
                 }
             }
             catch (Exception ex)
@@ -1829,8 +1822,8 @@ namespace DeskTopTimer
             {
                 _IsWallHavaenRequestStarted = false;
                 Trace.WriteLine($"{time}结束WallHavenCache{WallHavenCache.Count}");
-                if(WallHavenCache.Count<=0)
-                    _actualPageIndex --;
+                if (WallHavenCache.Count <= 0)
+                    _actualPageIndex--;
                 WallHavenRequestToken = null;
             }
 
@@ -1859,7 +1852,7 @@ namespace DeskTopTimer
         /// <summary>
         /// 初始化，在窗口类初始化后执行
         /// </summary>
-        public async void Init()
+        public void Init()
         {
             try
             {
@@ -1901,7 +1894,7 @@ namespace DeskTopTimer
                 }
                 ReadWebSites();
                 if (string.IsNullOrEmpty(CurrentWebAddress))
-                    CurrentWebAddress = WebAddresses?.FirstOrDefault();
+                    CurrentWebAddress = WebAddresses?.FirstOrDefault()??"";
                 //CacheResetSemaphore = new Semaphore((int)MaxCacheCount - 1, (int)MaxCacheCount);
                 //TODO:set SeSeApis to file records with different process way
                 SeSeApis = new List<string>()
@@ -1924,45 +1917,49 @@ namespace DeskTopTimer
 
 
                 GetAllFont();
-                SelectedFontFamily = FontFamilies.ElementAt(curConfig.timeFontIndex);
-                SelectedWeekendFontFamily = FontFamilies.ElementAt(curConfig.weekendFontIndex);
-                TimeCenterFontSize = curConfig.timeFontSize;
-                WeekendCenterFontSize = curConfig.weekendFontSize;
-                TimeFontColor = ColorToStringHelper.HexConverter(curConfig.timeFontColor);
-                WeekendFontColor = ColorToStringHelper.HexConverter(curConfig.weekendFontColor);
-
-                IsBackgroundUsingVideo = curConfig.isUsingVideoBackGround;
-                if (!string.IsNullOrEmpty(curConfig.videoDir))
-                    videoPathDir = curConfig.videoDir;
-                BackgroundVideos = ReadDestVideo(videoPathDir);
-                IsLoopPlay = curConfig.isLoopPlay;
-                VideoVolume = curConfig.volume;
-                if (!IsWebViewVisible)
+                if (curConfig != null)
                 {
-                    if (IsBackgroundUsingVideo)
-                    {
-                        if (!string.IsNullOrEmpty(curConfig.selectedVideoPath))
-                            CurrentBackgroundVideoPath = curConfig.selectedVideoPath;
+                    SelectedFontFamily = FontFamilies.ElementAt(curConfig.timeFontIndex);
+                    SelectedWeekendFontFamily = FontFamilies.ElementAt(curConfig.weekendFontIndex);
+                    TimeCenterFontSize = curConfig.timeFontSize;
+                    WeekendCenterFontSize = curConfig.weekendFontSize;
+                    TimeFontColor = ColorToStringHelper.HexConverter(curConfig.timeFontColor);
+                    WeekendFontColor = ColorToStringHelper.HexConverter(curConfig.weekendFontColor);
 
-                        else
-                            CurrentBackgroundVideoPath = BackgroundVideos.FirstOrDefault();
+
+
+
+                    IsBackgroundUsingVideo = curConfig.isUsingVideoBackGround;
+                    if (!string.IsNullOrEmpty(curConfig.videoDir))
+                        videoPathDir = curConfig.videoDir;
+                    BackgroundVideos = ReadDestVideo(videoPathDir);
+                    IsLoopPlay = curConfig.isLoopPlay;
+                    VideoVolume = curConfig.volume;
+                    if (!IsWebViewVisible)
+                    {
+                        if (IsBackgroundUsingVideo)
+                        {
+                            if (!string.IsNullOrEmpty(curConfig.selectedVideoPath))
+                                CurrentBackgroundVideoPath = curConfig.selectedVideoPath;
+
+                            else
+                                CurrentBackgroundVideoPath = BackgroundVideos.FirstOrDefault();
+                        }
                     }
+
+                    IsUsingAudiVisualizer = curConfig.isUsingAudioVisualize;
+                    AudioVisualizer.DrawingRectCount = curConfig.audioVisualizerSetting.drawingRectCount;
+
+                    AudioVisualizer.DrawingRectBorderWidth = curConfig.audioVisualizerSetting.drawingRectBorderThickness;
+                    AudioVisualizer.DrawingRectRadius = curConfig.audioVisualizerSetting.drawingRectRectRadius;
+                    AudioVisualizer.IsUsingRandomColor = curConfig.audioVisualizerSetting.usingRamdomColor;
+                    AudioVisualizer.SpColor = ColorToStringHelper.HexConverter(curConfig.audioVisualizerSetting.drawingRectFillColor ??= "#FFFFFFFF");
+                    AudioVisualizer.SpStrokeColor = ColorToStringHelper.HexConverter(curConfig.audioVisualizerSetting.drawingRectStrokeColor ??= "#FFFFFFFF");
+                    AudioVisualizer.VisualOpacity = curConfig.audioVisualizerSetting.visualOpacity;
+                    AudioVisualizer.DataWeight = curConfig.audioVisualizerSetting.dataWeight;
                 }
 
-                IsUsingAudiVisualizer = curConfig.isUsingAudioVisualize;
-                AudioVisualizer.DrawingRectCount = curConfig.audioVisualizerSetting.drawingRectCount;
-
-                AudioVisualizer.DrawingRectBorderWidth =curConfig.audioVisualizerSetting.drawingRectBorderThickness;
-                AudioVisualizer.DrawingRectRadius = curConfig.audioVisualizerSetting.drawingRectRectRadius ;
-                AudioVisualizer.IsUsingRandomColor =  curConfig.audioVisualizerSetting.usingRamdomColor ;
-                AudioVisualizer.SpColor= ColorToStringHelper.HexConverter(curConfig.audioVisualizerSetting.drawingRectFillColor??="#FFFFFFFF");
-                AudioVisualizer.SpStrokeColor = ColorToStringHelper.HexConverter(curConfig.audioVisualizerSetting.drawingRectStrokeColor??="#FFFFFFFF");
-                AudioVisualizer.VisualOpacity = curConfig.audioVisualizerSetting.visualOpacity;
-                AudioVisualizer.DataWeight = curConfig.audioVisualizerSetting.dataWeight;
-
                 _IsInitComplete = true;
-
-
 
             }
             catch (Exception ex)
