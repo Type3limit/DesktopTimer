@@ -62,7 +62,14 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="Transparent" />
+                                <Setter TargetName="Bd" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush>
+                                            <GradientStop Offset="0" Color="#3a7bd5" />
+                                            <GradientStop Offset=".5" Color="#3a6073" />
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
                                 <Setter Property="TextElement.Foreground">
                                     <Setter.Value>
                                         <DynamicResource ResourceKey="{x:Static SystemColors.HighlightTextBrushKey}" />
@@ -76,7 +83,6 @@
                                 </MultiTrigger.Conditions>
                                 <Setter TargetName="Bd" Property="Background">
                                     <Setter.Value>
-
                                         <LinearGradientBrush>
                                             <GradientStop Offset="0" Color="#3a7bd5" />
                                             <GradientStop Offset=".5" Color="#3a6073" />
@@ -102,7 +108,14 @@
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#00000000" />
+                                <Setter TargetName="Bd" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush>
+                                            <GradientStop Offset="0" Color="#3a7bd5" />
+                                            <GradientStop Offset=".5" Color="#3a6073" />
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
