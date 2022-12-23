@@ -1349,10 +1349,13 @@ namespace DeskTopTimer
                         {
                             return;
                         }
+                        if(CurTranslateObject==str)//same,ignore
+                            return;
                         BaiduRequestedWords?.Add(str);
                         YouDaoRequestedWords?.Add(str);
                         CurTranslateObject = str;
-                        new Action(StartBaiduTranslate).WithParllel(StartYouDaoTranslate)?.ForAll(x => x.Invoke());
+                        StartBaiduTranslate();
+                        StartYouDaoTranslate();
                     }
                     catch (Exception ex)
                     {
@@ -1983,6 +1986,7 @@ namespace DeskTopTimer
                             var TransResult = await WebRequestsTool.BaiduTranslate(x, translatedCanceller);
                             if (false == TransResult?.IsNullOrEmpty())
                             {
+                                
                                 SubmitTranslateResult(x,TransResult);
                                 if (SelectedTranslateResult == null)
                                     SelectedTranslateResult = TransResult;
@@ -1990,7 +1994,7 @@ namespace DeskTopTimer
                             }
                         });
 
-                        Thread.Sleep(100);
+                        Thread.Sleep(300);
                     }
                 }
                 catch(Exception ex) 
@@ -2035,7 +2039,7 @@ namespace DeskTopTimer
                         }
                     });
 
-                    Thread.Sleep(100);
+                    Thread.Sleep(300);
                 }
             }
             catch(Exception ex) 

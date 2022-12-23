@@ -327,6 +327,8 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                 translateWindow = new OptionsWindow();
                 translateWindow.DataContext = windowInstance.DataContext;
                 translateWindow.Show();
+                translateWindow.Activate();
+                translateWindow.Focus();
             }
 
         }

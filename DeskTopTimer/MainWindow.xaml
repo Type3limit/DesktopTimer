@@ -39,7 +39,7 @@
     WindowStyle="None"
     mc:Ignorable="d">
     <Window.DataContext>
-        <local:MainWorkSpace/>
+        <local:MainWorkSpace />
     </Window.DataContext>
     <Window.Resources>
         <ResourceDictionary>
