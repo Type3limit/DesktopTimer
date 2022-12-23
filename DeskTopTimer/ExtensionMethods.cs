@@ -9,12 +9,13 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Documents;
 using System.Windows.Input;
 
-namespace CommonModels.ToolModels
+namespace DeskTopTimer
 {
 
     public static class ExtensionsMethods
@@ -203,8 +204,16 @@ namespace CommonModels.ToolModels
             return BitConverter.ToString(hashedBytes).Replace("-", "");
 
         }
-
-
+        /// <summary>
+        /// 是否包含中文
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static bool ContainChinese(this string input)
+        {
+            string pattern = "[\u4e00-\u9fbb]";
+            return Regex.IsMatch(input, pattern);
+        }
 
         #endregion
 

@@ -6,6 +6,7 @@ using Microsoft.Toolkit.Mvvm.ComponentModel;
 using Microsoft.Toolkit.Mvvm.Input;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -14,6 +15,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -21,7 +24,7 @@ using System.Windows.Media.Imaging;
 namespace DeskTopTimer
 {
 
-    internal class MainWorkSpace : ObservableObject
+    public class MainWorkSpace : ObservableObject
     {
         #region PerformRegion
 
@@ -880,6 +883,48 @@ namespace DeskTopTimer
         #endregion
         #endregion
 
+        #region TranslateRelated
+
+        private bool shouldOpenTranslateResult = false;
+        /// <summary>
+        /// 标识是否需要开启翻译结果视图
+        /// </summary>
+        public bool ShouldOpenTranslateResult
+        {
+            get => shouldOpenTranslateResult;
+            set => SetProperty(ref shouldOpenTranslateResult, value);
+        }
+
+        private string? curTanslateObject = null;
+        public string? CurTranslateObject
+        {
+            get=>curTanslateObject;
+            set=>curTanslateObject=value; 
+
+        }
+
+        private ObservableCollection<string?> translateResult = new ObservableCollection<string?>();
+        /// <summary>
+        /// 翻译结果
+        /// </summary>
+        public ObservableCollection<string?> TranslateResult
+        {
+            get => translateResult;
+            set => SetProperty(ref translateResult, value);
+        }
+
+        private string? selectedTranslateResult = null;
+        /// <summary>
+        /// 选中的翻译结果
+        /// </summary>
+        public string? SelectedTranslateResult
+        {
+            get => selectedTranslateResult;
+            set => SetProperty(ref selectedTranslateResult, value);
+        }
+
+        #endregion
+
         #region SubModelRelated Properties
 
         private List<SubModelBase> models = new List<SubModelBase>();
@@ -1193,7 +1238,7 @@ namespace DeskTopTimer
                            _IsOneThreadPausedHere = false;
                        }
                        ProgressDialogController? Con = null;
-                       if (BusyNow!=null)
+                       if (BusyNow != null)
                            Con = await BusyNow.Invoke("相关文件搜索中...");
                        try
                        {
@@ -1265,6 +1310,69 @@ namespace DeskTopTimer
                      return;
                  SelectedResult?.RunCurrentProcess?.Execute(null);
              }));
+        }
+
+
+        CancellationTokenSource? translatedCanceller = null;
+        ICommand? runTranslateCommand = null;
+        /// <summary>
+        /// 启动翻译
+        /// </summary>
+        public ICommand? RunTranslateCommand
+        {
+            get => runTranslateCommand ?? (runTranslateCommand = new RelayCommand<string?>(async (str) =>
+            {
+                await Task.Run(() => 
+                {
+                    if (translatedCanceller == null)
+                    {
+                        translatedCanceller = new CancellationTokenSource();
+                    }
+                    try
+                    {
+                        lock(BaiduRequestedWords)
+                        {
+                            BaiduRequestedWords?.Clear();
+                        }
+                        lock(YouDaoRequestedWords)
+                        {
+                            YouDaoRequestedWords?.Clear();
+                        }
+
+                        ShouldOpenTranslateResult = false;
+                        SelectedTranslateResult = null;
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            TranslateResult?.Clear();
+                        });
+                        if (true == str?.IsNullOrEmpty())
+                        {
+                            return;
+                        }
+                        BaiduRequestedWords?.Add(str);
+                        YouDaoRequestedWords?.Add(str);
+                        CurTranslateObject = str;
+                        new Action(StartBaiduTranslate).WithParllel(StartYouDaoTranslate)?.ForAll(x => x.Invoke());
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine(ex);
+                    }
+                });
+               
+
+            }));
+        }
+
+        void SubmitTranslateResult(string? key,string? result)
+        {
+            if(key==curTanslateObject)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    TranslateResult.Add(result);
+                });
+            }
         }
 
         #endregion
@@ -1388,7 +1496,7 @@ namespace DeskTopTimer
                 curConfig.flushTime = MaxSeSeCount;
                 curConfig.isTopmost = IsTopMost;
                 curConfig.isUsingVideoBackGround = IsBackgroundUsingVideo;
-                curConfig.timeFontIndex = FontFamilies.IndexOf(SelectedFontFamily??FontFamilies.First()) < 0 ? 0 : FontFamilies.IndexOf(SelectedFontFamily ?? FontFamilies.First());
+                curConfig.timeFontIndex = FontFamilies.IndexOf(SelectedFontFamily ?? FontFamilies.First()) < 0 ? 0 : FontFamilies.IndexOf(SelectedFontFamily ?? FontFamilies.First());
                 curConfig.weekendFontIndex = FontFamilies.IndexOf(SelectedWeekendFontFamily ?? FontFamilies.First()) < 0 ? 0 : FontFamilies.IndexOf(SelectedWeekendFontFamily ?? FontFamilies.First());
                 curConfig.videoDir = VideoPathDir;
                 curConfig.selectedVideoPath = CurrentBackgroundVideoPath;
@@ -1691,7 +1799,7 @@ namespace DeskTopTimer
         private void GetAllFont()
         {
             //InstalledFontCollection MyFont = new InstalledFontCollection();
-            FontFamilies= Fonts.SystemFontFamilies.ToList();
+            FontFamilies = Fonts.SystemFontFamilies.ToList();
             SelectedFontFamily = FontFamilies.FirstOrDefault();
             SelectedWeekendFontFamily = FontFamilies.FirstOrDefault();
         }
@@ -1779,7 +1887,7 @@ namespace DeskTopTimer
                     Trace.WriteLine($"{time}:{response.data?.Count}");
                     int addCount = 0;
                     CurPage = response.meta.current_page;
-                    if (response.data!=null)
+                    if (response.data != null)
                     {
                         foreach (var x in response.data)
                         {
@@ -1792,8 +1900,8 @@ namespace DeskTopTimer
                             string res = "";
                             try
                             {
-                                if(x!=null)
-                                   res = await x.path.DownloadFileAsync(FileMapper.NormalSeSePictureDir, curFileName + exten, 4096, WallHavenRequestToken.Token);
+                                if (x != null)
+                                    res = await x.path.DownloadFileAsync(FileMapper.NormalSeSePictureDir, curFileName + exten, 4096, WallHavenRequestToken.Token);
                             }
                             catch (Exception ex)
                             {
@@ -1810,7 +1918,7 @@ namespace DeskTopTimer
                             Trace.WriteLine($"Add Count with{++addCount}，Path:{TotalFileName}");
                         }
                     }
-                       
+
 
                 }
             }
@@ -1845,6 +1953,102 @@ namespace DeskTopTimer
             Models = ModelsLists.Select(x => x.Key).ToList();
         }
 
+
+        #endregion
+
+
+        #region TranslateRealtedMethod
+        List<string?> BaiduRequestedWords = new List<string?>();
+        bool IsBaiduTranslateStarted = false;
+        private void StartBaiduTranslate()
+        {
+            if(IsBaiduTranslateStarted)
+                return;
+            while(!IsBaiduTranslateStarted)
+                IsBaiduTranslateStarted = true;
+            Task.Run(() =>
+            {
+                try
+                {
+                    while (BaiduRequestedWords?.Count > 0 && false == translatedCanceller?.IsCancellationRequested)
+                    {
+                        string? curRequestwords = null;
+                        lock (BaiduRequestedWords)
+                        {
+                            curRequestwords = BaiduRequestedWords?.FirstOrDefault();
+                            BaiduRequestedWords?.Remove(curRequestwords);
+                        }
+                        curRequestwords?.IfDo(x => !x.IsNullOrEmpty(), async (x) =>
+                        {
+                            var TransResult = await WebRequestsTool.BaiduTranslate(x, translatedCanceller);
+                            if (false == TransResult?.IsNullOrEmpty())
+                            {
+                                SubmitTranslateResult(x,TransResult);
+                                if (SelectedTranslateResult == null)
+                                    SelectedTranslateResult = TransResult;
+                                ShouldOpenTranslateResult = TranslateResult.Count > 0;
+                            }
+                        });
+
+                        Thread.Sleep(100);
+                    }
+                }
+                catch(Exception ex) 
+                {
+                    Trace.WriteLine(ex);
+                }
+                finally
+                {
+                    while (IsBaiduTranslateStarted)
+                        IsBaiduTranslateStarted = false;
+                }
+                
+            });
+        }
+        List<string?> YouDaoRequestedWords = new List<string?>();
+        bool IsYouDaoTranslateStarted =false;
+        private void StartYouDaoTranslate()
+        {
+            if(IsYouDaoTranslateStarted)
+                return;
+            while(!IsYouDaoTranslateStarted)
+                IsYouDaoTranslateStarted = true;
+            try
+            {
+                while (YouDaoRequestedWords?.Count > 0 && false == translatedCanceller?.IsCancellationRequested)
+                {
+                    string? curRequestwords = null;
+                    lock (YouDaoRequestedWords)
+                    {
+                        curRequestwords = YouDaoRequestedWords?.FirstOrDefault();
+                        YouDaoRequestedWords?.Remove(curRequestwords);
+                    }
+                    curRequestwords?.IfDo(x => !x.IsNullOrEmpty(), async (x) =>
+                    {
+                        var TransResult = await WebRequestsTool.YouDaoTranslate(x, translatedCanceller);
+                        if (false == TransResult?.IsNullOrEmpty())
+                        {
+                            SubmitTranslateResult(x, TransResult);
+                            if (SelectedTranslateResult == null)
+                                SelectedTranslateResult = TransResult;
+                            ShouldOpenTranslateResult = TranslateResult.Count > 0;
+                        }
+                    });
+
+                    Thread.Sleep(100);
+                }
+            }
+            catch(Exception ex) 
+            { 
+                Trace.WriteLine(ex);
+            }
+            finally
+            {
+                while (IsYouDaoTranslateStarted)
+                  IsYouDaoTranslateStarted = false;
+            }
+            
+        }
 
         #endregion
 
@@ -1894,7 +2098,7 @@ namespace DeskTopTimer
                 }
                 ReadWebSites();
                 if (string.IsNullOrEmpty(CurrentWebAddress))
-                    CurrentWebAddress = WebAddresses?.FirstOrDefault()??"";
+                    CurrentWebAddress = WebAddresses?.FirstOrDefault() ?? "";
                 //CacheResetSemaphore = new Semaphore((int)MaxCacheCount - 1, (int)MaxCacheCount);
                 //TODO:set SeSeApis to file records with different process way
                 SeSeApis = new List<string>()

@@ -227,6 +227,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
     public partial class MainWindow : MetroWindow
     {
         static MainWindow windowInstance = null;
+        static OptionsWindow translateWindow = null;
         static bool IsWindowShow = false;
         MainWorkSpace MainWorkSpace = null;
         bool IsPlayVideoSuccess = false;
@@ -243,6 +244,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
         HotKey showWebFlyOut = new HotKey(Key.U, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowWebFlyOut), "网页地址显示\\隐藏");
         //暂时屏蔽Everything api
         //HotKey showEveryThingFlyOut = new HotKey(Key.E, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowEveryThingFlyOut), "搜索本机文件");
+        HotKey showTranslate = new HotKey(Key.Z,KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnTranslate), "唤起翻译窗口");
 
         static public void OnHiddenKey(HotKey currentKey)
         {
@@ -310,6 +312,23 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             {
                 mainWorkSpace.IsOpenSearchFlyOut = true;
             }
+        }
+
+
+        static public void OnTranslate(HotKey currentKey)
+        {
+            if(translateWindow!=null&&!translateWindow.IsClosed)
+            {
+                translateWindow.Close();
+                return;
+            }
+            else
+            {
+                translateWindow = new OptionsWindow();
+                translateWindow.DataContext = windowInstance.DataContext;
+                translateWindow.Show();
+            }
+
         }
 
         private void SetFontBursh()
@@ -534,7 +553,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             //#if DEBUG
             //            WebView.ShowDevTools();
             //#endif
-            MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut });
+            MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut,showTranslate });
         }
 
         private void AudioVisualizer_WaveParamChanged(int RectCount, double DrawingBorderWidth, bool UsingRadomColor, Color? spColor, double RectRadius)
@@ -656,6 +675,8 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
         {
             MainWorkSpace?.CloseSese();
             MainWorkSpace?.AudioVisualizer?.StopRecord();
+            if(translateWindow!=null&&!translateWindow.IsClosed)
+                translateWindow.Close();
         }
 
         private void MainWorkSpace_CloseWindow()
