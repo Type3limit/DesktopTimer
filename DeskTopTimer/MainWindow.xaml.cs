@@ -319,7 +319,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
         {
             if(translateWindow!=null&&!translateWindow.IsClosed)
             {
-                translateWindow.Close();
+                translateWindow.WindowClose();
                 return;
             }
             else
@@ -676,7 +676,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             MainWorkSpace?.CloseSese();
             MainWorkSpace?.AudioVisualizer?.StopRecord();
             if(translateWindow!=null&&!translateWindow.IsClosed)
-                translateWindow.Close();
+                translateWindow.WindowClose();
         }
 
         private void MainWorkSpace_CloseWindow()

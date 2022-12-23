@@ -38,7 +38,7 @@ namespace DeskTopTimer
         protected override void OnDeactivated(EventArgs e)
         {
             base.OnDeactivated(e);
-             Close();
+            WindowClose();
         }
 
         private void OptionsWindow_Closed(object? sender, EventArgs e)
@@ -72,7 +72,7 @@ namespace DeskTopTimer
                     dataObject.SetData(DataFormats.StringFormat, viewModel?.SelectedTranslateResult);
                     Clipboard.SetDataObject(dataObject);
                 }
-
+                WindowClose();
             }
             else if(e.Key==Key.Up)
             {
@@ -100,6 +100,15 @@ namespace DeskTopTimer
                 dataObject.SetData(DataFormats.StringFormat, viewModel?.SelectedTranslateResult);
                 Clipboard.SetDataObject(dataObject);
             }
+            WindowClose();
+        }
+        bool IsInClose = false;
+        public void WindowClose()
+        {
+            if(IsInClose)
+                return;
+            IsInClose = true;
+            Close();
         }
     }
 }
