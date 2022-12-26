@@ -146,6 +146,10 @@ namespace DeskTopTimer.Converter
             {
                 return font.GetLocalizedName();
             }
+            else if(value is LanguageSpecificStringDictionary lssd)
+            {
+                return lssd?.Values?.FirstOrDefault();
+            }
             return Binding.DoNothing;
         }
 

@@ -408,14 +408,15 @@
                                     Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=3}"
                                     BorderThickness="0"
                                     ItemsSource="{Binding FontFamilies, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedFontFamily, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    SelectedItem="{Binding SelectedFontFamily, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    VirtualizingPanel.IsVirtualizing="True">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
                                             <TextBlock
                                                 VerticalAlignment="Center"
                                                 FontFamily="{Binding}"
                                                 Foreground="White"
-                                                Text="{Binding FamilyNames, Converter={StaticResource FontFamilyCon}}" />
+                                                Text="{Binding Mode=Default, Converter={StaticResource FontFamilyCon}}" />
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
@@ -461,14 +462,15 @@
                                     Width="{Binding WindowWidth, Converter={StaticResource halfCon}, ConverterParameter=3}"
                                     BorderThickness="0"
                                     ItemsSource="{Binding FontFamilies, UpdateSourceTrigger=PropertyChanged}"
-                                    SelectedItem="{Binding SelectedWeekendFontFamily, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    SelectedItem="{Binding SelectedWeekendFontFamily, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    VirtualizingPanel.IsVirtualizing="True">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
                                             <TextBlock
                                                 VerticalAlignment="Center"
                                                 FontFamily="{Binding}"
                                                 Foreground="White"
-                                                Text="{Binding FamilyNames, Converter={StaticResource FontFamilyCon}}" />
+                                                Text="{Binding Mode=Default, Converter={StaticResource FontFamilyCon}}" />
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
