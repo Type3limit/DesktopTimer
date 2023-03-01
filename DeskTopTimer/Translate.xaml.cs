@@ -59,7 +59,7 @@ namespace DeskTopTimer
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            viewModel?.RunTranslateCommand?.Execute(InPutText.Text);
+            //viewModel?.RunTranslateCommand?.Execute(InPutText.Text);
         }
 
         private void TextBox_KeyDown(object sender, KeyEventArgs e)

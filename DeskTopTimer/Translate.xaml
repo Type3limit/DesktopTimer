@@ -94,6 +94,7 @@
                                         <DynamicResource ResourceKey="{x:Static SystemColors.ControlTextBrushKey}" />
                                     </Setter.Value>
                                 </Setter>
+                                <Setter Property="TextElement.FontSize" Value="20" />
                             </MultiTrigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="TextElement.Foreground">
@@ -155,6 +156,7 @@
                     FontSize="22"
                     Foreground="White"
                     PreviewKeyDown="TextBox_KeyDown"
+                    Text="{Binding TranslateSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     TextChanged="TextBox_TextChanged" />
                 <Popup
                     AllowsTransparency="True"

@@ -885,6 +885,22 @@ namespace DeskTopTimer
 
         #region TranslateRelated
 
+        private string translateSource = "";
+        public string TranslateSource
+        {
+            get=>translateSource;
+            set{
+                if (translateSource != value)
+                {
+
+                    SetProperty(ref translateSource, value);
+                    RunTranslateCommand.Execute(value);
+                }
+
+            }
+        }
+
+
         private bool shouldOpenTranslateResult = false;
         /// <summary>
         /// 标识是否需要开启翻译结果视图
@@ -895,7 +911,7 @@ namespace DeskTopTimer
             set => SetProperty(ref shouldOpenTranslateResult, value);
         }
 
-        private string? curTanslateObject = null;
+        private volatile string? curTanslateObject = null;
         public string? CurTranslateObject
         {
             get=>curTanslateObject;
@@ -903,7 +919,7 @@ namespace DeskTopTimer
 
         }
 
-        private ObservableCollection<string?> translateResult = new ObservableCollection<string?>();
+        private volatile ObservableCollection<string?> translateResult = new ObservableCollection<string?>();
         /// <summary>
         /// 翻译结果
         /// </summary>
@@ -1354,8 +1370,9 @@ namespace DeskTopTimer
                         BaiduRequestedWords?.Add(str);
                         YouDaoRequestedWords?.Add(str);
                         CurTranslateObject = str;
-                        StartBaiduTranslate();
+                       
                         StartYouDaoTranslate();
+                        StartBaiduTranslate();
                     }
                     catch (Exception ex)
                     {
@@ -1983,15 +2000,17 @@ namespace DeskTopTimer
                         }
                         curRequestwords?.IfDo(x => !x.IsNullOrEmpty(), async (x) =>
                         {
+                            Trace.WriteLine("request with baidu");
                             var TransResult = await WebRequestsTool.BaiduTranslate(x, translatedCanceller);
                             if (false == TransResult?.IsNullOrEmpty())
                             {
-                                
+                                Trace.WriteLine($"Baidu present a result with {x}");
                                 SubmitTranslateResult(x,TransResult);
                                 if (SelectedTranslateResult == null)
                                     SelectedTranslateResult = TransResult;
                                 ShouldOpenTranslateResult = TranslateResult.Count > 0;
                             }
+                            Trace.WriteLine($"request baidu end with {TransResult}");
                         });
 
                         Thread.Sleep(300);

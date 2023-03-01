@@ -302,7 +302,7 @@ namespace DeskTopTimer
                 Random random = new Random();
                 string salt = random.Next(100000).ToString();
                 string sign = EncryptString(BaiduAppId + src + salt + BaiduSecretKey);
-                url += "&from=Auto";
+                url += "&from="+from;
                 url += "&to=" + to;
                 url += "&appid=" + BaiduAppId;
                 url += "&salt=" + salt;

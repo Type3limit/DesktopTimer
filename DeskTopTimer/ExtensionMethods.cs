@@ -4,10 +4,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -854,5 +857,76 @@ namespace DeskTopTimer
         }
 
     }
+    public static class ImageHelper
+    {
+        static ImageHelper()
+        {
+            lock (typeof(ImageHelper))
+            {
+                _mapping = GetImageFormatMapping();
+            }
+        }
+        private static IDictionary<Guid, String> _mapping;
+        private static IDictionary<Guid, String> GetImageFormatMapping()
+        {
+            var dic = new Dictionary<Guid, String>();
+            var properties = typeof(ImageFormat).GetProperties(
+                BindingFlags.Static | BindingFlags.Public
+            );
+            foreach (var property in properties)
+            {
+                var format = property.GetValue(null, null) as ImageFormat;
+                if (format == null) continue;
+                dic[format.Guid] = "." + property.Name.ToLower();
+            }
+            return dic;
+        }
 
+        public static bool IsImageExtension(this string path)
+        {
+            try
+            {
+                string extension = Path.GetExtension(path).ToLower();
+                if (_mapping.Values.Contains(extension))
+                {
+                    return true;
+                }
+                if (extension == ".jpg")
+                {
+                    return true;
+                }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static string GetImageExtension(this string path)
+        {
+            Image img = null;
+            try
+            {
+                if (!path.IsFileExist())
+                    return string.Empty;
+                img = Image.FromFile(path);
+                var format = img.RawFormat;
+                if (_mapping.ContainsKey(format.Guid))
+                {
+                    return _mapping[format.Guid];
+                }
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex);
+                return string.Empty;
+            }
+            finally
+            {
+                img?.Dispose();
+            }
+        }
+    }
 }
