@@ -641,7 +641,6 @@ namespace DeskTopTimer
 
         public AudioVisualizerSetting audioVisualizerSetting { set; get; } = new AudioVisualizerSetting();
 
-        //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
         public string? OpenAiKey { set;get;}
     }
 
