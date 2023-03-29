@@ -18,6 +18,8 @@ using System.Security.Policy;
 using System.Web;
 using Newtonsoft.Json;
 
+using OpenAI_API;
+
 namespace DeskTopTimer
 {
     public class WebRequestsTool
@@ -443,5 +445,22 @@ namespace DeskTopTimer
         #endregion
         #endregion
 
+
+        #region openAi
+        private OpenAIAPI? openAiAPI = null;
+        public void InitOpenAI(string key)
+        {
+            openAiAPI = new OpenAIAPI(key);
+        }
+
+        public async Task<string?> Ask(string question,double randomPercent = 0.1)
+        {
+            if(openAiAPI==null)
+                return null;
+            var result = await openAiAPI.Completions.CreateCompletionAsync(question, temperature: randomPercent);
+            return result.ToString();
+        }
+
+        #endregion
     }
 }
