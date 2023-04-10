@@ -462,8 +462,12 @@ namespace DeskTopTimer
                 var strPath =storePath.PathCombine($"{info.Id}.jpg");
                 if(strPath.IsFileExist())
                 {
-                    var ExStr = strPath.GetImageExtension();
-                    strPath = storePath.PathCombine($"{info.Id}.{ExStr}");
+                    if(strPath.IsGif())
+                    {
+                        var nstrPath = storePath.PathCombine($"{info.Id}.gif");
+                        File.Move(strPath,nstrPath);
+                        strPath = nstrPath;
+                    }
                     yield return strPath;
                     continue;
                 }

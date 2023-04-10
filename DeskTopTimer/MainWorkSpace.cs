@@ -1443,7 +1443,7 @@ namespace DeskTopTimer
 
         System.Timers.Timer? emojiTimer = null;
         string? lastRequestWords = null;
-
+        CancellationTokenSource? emojiCanceller = null;
         int invokeCount = 0;
         ICommand? runEmojiCommand = null;
         public ICommand? RunEmojiCommand
@@ -1464,6 +1464,7 @@ namespace DeskTopTimer
                             RunEmojiRequest();
                         }
                     };
+                    
                 }
                 invokeCount = 0;
                 emojiTimer.Enabled = false;
@@ -1475,6 +1476,15 @@ namespace DeskTopTimer
         int currentPage = 1;
         public async void RunEmojiRequest(bool isExpand = false)
         {
+            if(emojiCanceller!=null)
+            {
+                emojiCanceller.Cancel();
+                while(emojiCanceller!=null)
+                {
+                    Thread.Sleep(1);
+                }
+            }
+            emojiCanceller = new CancellationTokenSource();
             await Task.Run(async () =>
             {
                 try
@@ -1486,22 +1496,23 @@ namespace DeskTopTimer
                         {
                             EmojiResults.Clear();
                         });
-
                     }
                     lastRequestWords = EmojiKey;
                     var res = WebRequestsTool.GetEmoji(EmojiKey, currentPage, 100, FileMapper.CurrentEmojiCacheDir);
                     await foreach (var x in res)
                     {
+                        if(emojiCanceller.IsCancellationRequested)
+                            break;
                         x.IfDo(o => o.IsFileExist(), (o) =>
                         {
                            EmojiSource emojiSource = new EmojiSource();
                            emojiSource.sourcePath = o;
                            emojiSource.imageSource = ImageTool.GetImage(o);
-                           Application.Current.Dispatcher.Invoke(() =>
+                           Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                            {
                                EmojiResults.Add(emojiSource);
                                ShouldOpenEmojiResult = EmojiResults.Count > 0;
-                            });
+                            }));
                         });
                     }
                     if (!isExpand)
@@ -1517,8 +1528,9 @@ namespace DeskTopTimer
                 finally
                 {
                     emojiTimer?.Stop();
+                    emojiCanceller=null;
                 }
-            });
+            },emojiCanceller.Token);
 
         }
 

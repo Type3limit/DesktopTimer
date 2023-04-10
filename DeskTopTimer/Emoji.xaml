@@ -45,22 +45,41 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border
-                            Name="Bd"
-                            Padding="{TemplateBinding Padding}"
-                            Background="Transparent"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="8"
-                            SnapsToDevicePixels="True">
-                            <ContentPresenter
-                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                Content="{TemplateBinding Content}"
-                                ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                ContentTemplate="{TemplateBinding ContentTemplate}"
-                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                        </Border>
+                        <Grid Name="Outers">
+
+
+                            <Border
+                                Name="Bd"
+                                Padding="{TemplateBinding Padding}"
+                                Background="Transparent"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                SnapsToDevicePixels="True">
+
+                                <ContentPresenter
+                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    Content="{TemplateBinding Content}"
+                                    ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                            </Border>
+                            <Border
+                                x:Name="Selector"
+                                Padding="{TemplateBinding Padding}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Opacity="0">
+                                <Border.Background>
+                                    <LinearGradientBrush>
+                                        <GradientStop Offset="0" Color="#3a7bd5" />
+                                        <GradientStop Offset=".5" Color="#3a6073" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Bd" Property="Background">
@@ -90,6 +109,9 @@
                                         </LinearGradientBrush>
                                     </Setter.Value>
                                 </Setter>
+                                <Setter TargetName="Selector" Property="Opacity" Value="0.6" />
+
+
                                 <Setter Property="TextElement.Foreground">
                                     <Setter.Value>
                                         <DynamicResource ResourceKey="{x:Static SystemColors.ControlTextBrushKey}" />
@@ -118,6 +140,7 @@
                                         </LinearGradientBrush>
                                     </Setter.Value>
                                 </Setter>
+                                <Setter TargetName="Selector" Property="Opacity" Value="0.6" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
