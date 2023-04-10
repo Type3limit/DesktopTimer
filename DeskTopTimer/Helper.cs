@@ -584,6 +584,16 @@ namespace DeskTopTimer
                 return FileName;
             }
         }
+        public static string CurrentEmojiCacheDir
+        {
+            get
+                { 
+                string currentDir = System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase + "EmojiCache";
+                if (!Directory.Exists(currentDir))
+                    Directory.CreateDirectory(currentDir);
+                return currentDir;
+                }
+        }
     }
 
     /// <summary>
@@ -924,5 +934,11 @@ namespace DeskTopTimer
                 }
             }
         }
+    }
+
+    public  class EmojiSource
+    {
+        public string? sourcePath{set;get;}
+        public BitmapSource? imageSource{set;get;}
     }
 }

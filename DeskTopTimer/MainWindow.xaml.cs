@@ -228,6 +228,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
     {
         static MainWindow windowInstance = null;
         static OptionsWindow translateWindow = null;
+        static EmojiWindow emojiWindow = null;
         static bool IsWindowShow = false;
         MainWorkSpace MainWorkSpace = null;
         bool IsPlayVideoSuccess = false;
@@ -245,7 +246,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
         //暂时屏蔽Everything api
         //HotKey showEveryThingFlyOut = new HotKey(Key.E, KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnShowEveryThingFlyOut), "搜索本机文件");
         HotKey showTranslate = new HotKey(Key.Z,KeyModifier.Shift | KeyModifier.Alt, new Action<HotKey>(OnTranslate), "唤起翻译窗口");
-
+        HotKey showEmoji = new HotKey(Key.Q,KeyModifier.Shift|KeyModifier.Alt,new Action<HotKey>(OnEmoji),"唤起表情包窗口");
         static public void OnHiddenKey(HotKey currentKey)
         {
             if (windowInstance == null)
@@ -329,6 +330,24 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
                 translateWindow.Show();
                 translateWindow.Activate();
                 translateWindow.Focus();
+            }
+
+        }
+
+        static public void OnEmoji(HotKey currentKey)
+        {
+            if(emojiWindow!=null&&!emojiWindow.IsClosed)
+            {
+                emojiWindow.WindowClose();
+                return;
+            }
+            else
+            {
+                emojiWindow = new EmojiWindow();
+                emojiWindow.DataContext = windowInstance.DataContext;
+                emojiWindow.Show();
+                emojiWindow.Activate();
+                emojiWindow.Focus();
             }
 
         }
@@ -555,7 +574,7 @@ IWindowInfo windowInfo, IBrowserSettings browserSettings, ref bool noJavascriptA
             //#if DEBUG
             //            WebView.ShowDevTools();
             //#endif
-            MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut,showTranslate });
+            MainWorkSpace.SetShotKeyDiscribe(new List<HotKey>() { hiddenKey, flashKey, setKey, hiddenTimerKey, showWebFlyOut,showTranslate,showEmoji });
         }
 
         private void AudioVisualizer_WaveParamChanged(int RectCount, double DrawingBorderWidth, bool UsingRadomColor, Color? spColor, double RectRadius)

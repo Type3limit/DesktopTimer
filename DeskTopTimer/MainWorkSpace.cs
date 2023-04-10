@@ -888,8 +888,9 @@ namespace DeskTopTimer
         private string translateSource = "";
         public string TranslateSource
         {
-            get=>translateSource;
-            set{
+            get => translateSource;
+            set
+            {
                 if (translateSource != value)
                 {
 
@@ -914,8 +915,8 @@ namespace DeskTopTimer
         private volatile string? curTanslateObject = null;
         public string? CurTranslateObject
         {
-            get=>curTanslateObject;
-            set=>curTanslateObject=value; 
+            get => curTanslateObject;
+            set => curTanslateObject = value;
 
         }
 
@@ -939,6 +940,50 @@ namespace DeskTopTimer
             set => SetProperty(ref selectedTranslateResult, value);
         }
 
+        #endregion
+
+        #region EmojiRelated
+        private string emojiKey = "";
+        public string EmojiKey
+        {
+            get => emojiKey;
+            set
+            {
+                if (emojiKey != value)
+                {
+                    SetProperty(ref emojiKey, value);
+                    RunEmojiCommand?.Execute(null);
+                }
+            }
+        }
+
+        private ObservableCollection<EmojiSource> emojiResults = new ObservableCollection<EmojiSource>();
+        public ObservableCollection<EmojiSource> EmojiResults
+        {
+            get => emojiResults;
+            set
+            {
+                SetProperty(ref emojiResults, value);
+            }
+        }
+
+        private bool shouldOpenEmojiResult = false;
+        public bool ShouldOpenEmojiResult
+        {
+            get => shouldOpenEmojiResult;
+            set => SetProperty(ref shouldOpenEmojiResult, value);
+        }
+
+
+        private EmojiSource? selectedEmoji = null;
+        public EmojiSource? SelectedEmoji
+        {
+            get => selectedEmoji;
+            set
+            {
+                SetProperty(ref selectedEmoji, value);
+            }
+        }
         #endregion
 
         #region SubModelRelated Properties
@@ -1338,7 +1383,7 @@ namespace DeskTopTimer
         {
             get => runTranslateCommand ?? (runTranslateCommand = new RelayCommand<string?>(async (str) =>
             {
-                await Task.Run(() => 
+                await Task.Run(() =>
                 {
                     if (translatedCanceller == null)
                     {
@@ -1346,11 +1391,11 @@ namespace DeskTopTimer
                     }
                     try
                     {
-                        lock(BaiduRequestedWords)
+                        lock (BaiduRequestedWords)
                         {
                             BaiduRequestedWords?.Clear();
                         }
-                        lock(YouDaoRequestedWords)
+                        lock (YouDaoRequestedWords)
                         {
                             YouDaoRequestedWords?.Clear();
                         }
@@ -1365,12 +1410,12 @@ namespace DeskTopTimer
                         {
                             return;
                         }
-                        if(CurTranslateObject==str)//same,ignore
+                        if (CurTranslateObject == str)//same,ignore
                             return;
                         BaiduRequestedWords?.Add(str);
                         YouDaoRequestedWords?.Add(str);
                         CurTranslateObject = str;
-                       
+
                         StartYouDaoTranslate();
                         StartBaiduTranslate();
                     }
@@ -1379,20 +1424,96 @@ namespace DeskTopTimer
                         Trace.WriteLine(ex);
                     }
                 });
-               
+
 
             }));
         }
 
-        void SubmitTranslateResult(string? key,string? result)
+        void SubmitTranslateResult(string? key, string? result)
         {
-            if(key==curTanslateObject)
+            if (key == curTanslateObject)
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     TranslateResult.Add(result);
                 });
             }
+        }
+
+
+        System.Timers.Timer? emojiTimer = null;
+        string? lastRequestWords = null;
+
+        int invokeCount = 0;
+        ICommand? runEmojiCommand = null;
+        public ICommand? RunEmojiCommand
+        {
+            get => runEmojiCommand ?? (runEmojiCommand = new RelayCommand(() =>
+            {
+                if (emojiTimer == null)
+                {
+                    emojiTimer = new System.Timers.Timer();
+                    emojiTimer.Interval = 100;
+                    emojiTimer.Elapsed += (s, e) =>
+                    {
+                        invokeCount++;
+                        if (invokeCount >= 3)
+                        {
+                            RunEmojiRequest();
+                            emojiTimer.Stop();
+                        }
+                    };
+                }
+                invokeCount = 0;
+                emojiTimer.Stop();
+                emojiTimer.Start();
+            }));
+        }
+        int currentPage = 1;
+        public async void RunEmojiRequest(bool isExpand = false)
+        {
+            await Task.Run(async () =>
+            {
+                try
+                {
+                    currentPage = lastRequestWords != EmojiKey ? 1 : currentPage + 1;
+                    if (lastRequestWords != EmojiKey)
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            EmojiResults.Clear();
+                        });
+
+                    }
+                    lastRequestWords = EmojiKey;
+                    var res = await WebRequestsTool.GetEmoji(EmojiKey, currentPage, 20, FileMapper.CurrentEmojiCacheDir);
+                    ShouldOpenEmojiResult = res.Count > 0;
+                    res.ForEach(x => x.IfDo(o => o.IsFileExist(), (o) =>
+                    {
+                        EmojiSource emojiSource = new EmojiSource();
+                        emojiSource.sourcePath = o;
+                        emojiSource.imageSource = ImageTool.GetImage(o);
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            EmojiResults.Add(emojiSource);
+                        });
+                    }));
+                    if (!isExpand)
+                    {
+                        SelectedEmoji = EmojiResults.FirstOrDefault();
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine(ex);
+                }
+                finally
+                {
+                    emojiTimer?.Stop();
+                }
+            });
+
         }
 
         #endregion
@@ -1982,9 +2103,9 @@ namespace DeskTopTimer
         bool IsBaiduTranslateStarted = false;
         private void StartBaiduTranslate()
         {
-            if(IsBaiduTranslateStarted)
+            if (IsBaiduTranslateStarted)
                 return;
-            while(!IsBaiduTranslateStarted)
+            while (!IsBaiduTranslateStarted)
                 IsBaiduTranslateStarted = true;
             Task.Run(() =>
             {
@@ -2005,7 +2126,7 @@ namespace DeskTopTimer
                             if (false == TransResult?.IsNullOrEmpty())
                             {
                                 Trace.WriteLine($"Baidu present a result with {x}");
-                                SubmitTranslateResult(x,TransResult);
+                                SubmitTranslateResult(x, TransResult);
                                 if (SelectedTranslateResult == null)
                                     SelectedTranslateResult = TransResult;
                                 ShouldOpenTranslateResult = TranslateResult.Count > 0;
@@ -2016,7 +2137,7 @@ namespace DeskTopTimer
                         Thread.Sleep(300);
                     }
                 }
-                catch(Exception ex) 
+                catch (Exception ex)
                 {
                     Trace.WriteLine(ex);
                 }
@@ -2025,16 +2146,16 @@ namespace DeskTopTimer
                     while (IsBaiduTranslateStarted)
                         IsBaiduTranslateStarted = false;
                 }
-                
+
             });
         }
         List<string?> YouDaoRequestedWords = new List<string?>();
-        bool IsYouDaoTranslateStarted =false;
+        bool IsYouDaoTranslateStarted = false;
         private void StartYouDaoTranslate()
         {
-            if(IsYouDaoTranslateStarted)
+            if (IsYouDaoTranslateStarted)
                 return;
-            while(!IsYouDaoTranslateStarted)
+            while (!IsYouDaoTranslateStarted)
                 IsYouDaoTranslateStarted = true;
             try
             {
@@ -2061,16 +2182,16 @@ namespace DeskTopTimer
                     Thread.Sleep(300);
                 }
             }
-            catch(Exception ex) 
-            { 
+            catch (Exception ex)
+            {
                 Trace.WriteLine(ex);
             }
             finally
             {
                 while (IsYouDaoTranslateStarted)
-                  IsYouDaoTranslateStarted = false;
+                    IsYouDaoTranslateStarted = false;
             }
-            
+
         }
 
         #endregion

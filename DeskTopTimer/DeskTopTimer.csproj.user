@@ -9,11 +9,17 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="Emoji.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Translate.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="Emoji.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="Translate.xaml">
       <SubType>Designer</SubType>
     </Page>
