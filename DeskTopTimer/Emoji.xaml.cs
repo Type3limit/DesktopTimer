@@ -1,6 +1,7 @@
 ﻿using MahApps.Metro.Controls;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,14 +19,14 @@ namespace DeskTopTimer
     /// <summary>
     /// Emoji.xaml 的交互逻辑
     /// </summary>
-    public partial class EmojiWindow : MahApps.Metro.Controls.MetroWindow 
+    public partial class EmojiWindow : MahApps.Metro.Controls.MetroWindow
     {
         MainWorkSpace? viewModel = null;
-        private bool isClosed  = false;
+        private bool isClosed = false;
         public bool IsClosed
         {
-            get=>isClosed;
-            private set=>isClosed = value;
+            get => isClosed;
+            private set => isClosed = value;
         }
         public EmojiWindow()
         {
@@ -64,42 +65,47 @@ namespace DeskTopTimer
 
         private void TextBox_KeyDown(object sender, KeyEventArgs e)
         {
-            
-            if(e.Key== Key.Enter)
+
+            if (e.Key == Key.Enter)
             {
-                if(viewModel?.SelectedEmoji!=null)
+                if (viewModel?.SelectedEmoji != null)
                 {
                     //DataObject dataObject = new DataObject();
                     //dataObject.SetImage(viewModel?.SelectedEmoji?.imageSource);
                     //Clipboard.SetDataObject(dataObject);
-                    Clipboard.SetImage(viewModel?.SelectedEmoji?.imageSource);
+                    if (viewModel.SelectedEmoji.sourcePath.IsGif())
+                    {
+
+                        StringCollection paths = new StringCollection();
+                        paths.Add(viewModel?.SelectedEmoji.sourcePath);
+                        Clipboard.SetFileDropList(paths);
+
+                    }
+                    else
+                    {
+                        Clipboard.SetImage(viewModel?.SelectedEmoji?.imageSource);
+                    }
                 }
                 WindowClose();
             }
-            else if(e.Key==Key.Up)
-            {
-                var index = viewModel?.EmojiResults.IndexOf(viewModel?.SelectedEmoji);
-                if(index>=0)
-                {
-                    viewModel.SelectedEmoji = viewModel.EmojiResults.ElementAt((int)((index-1<0?0:index-1) % viewModel.EmojiResults.Count));
-                }
-                if(index >=(viewModel.EmojiResults.Count-3))
-                {
-                    viewModel?.RunEmojiRequest();
-                }
-            }
-            else if(e.Key==Key.Down)
+            else if (e.Key == Key.Up)
             {
                 var index = viewModel?.EmojiResults.IndexOf(viewModel?.SelectedEmoji);
                 if (index >= 0)
                 {
-                    viewModel.SelectedEmoji = viewModel.EmojiResults.ElementAt((int)((index + 1 ) % viewModel.EmojiResults.Count));
+                    viewModel.SelectedEmoji = viewModel.EmojiResults.ElementAt((int)((index - 1 < 0 ? 0 : index - 1) % viewModel.EmojiResults.Count));
+                }
+
+            }
+            else if (e.Key == Key.Down)
+            {
+                var index = viewModel?.EmojiResults.IndexOf(viewModel?.SelectedEmoji);
+                if (index >= 0)
+                {
+                    viewModel.SelectedEmoji = viewModel.EmojiResults.ElementAt((int)((index + 1) % viewModel.EmojiResults.Count));
 
                 }
-                if(index >=(viewModel.EmojiResults.Count-3))
-                {
-                    viewModel?.RunEmojiRequest();
-                }
+ 
             }
         }
 
@@ -110,17 +116,62 @@ namespace DeskTopTimer
                 //DataObject dataObject = new DataObject();
                 //    dataObject.SetImage(viewModel?.SelectedEmoji?.imageSource);
                 //    Clipboard.SetDataObject(dataObject);
-                 Clipboard.SetImage(viewModel?.SelectedEmoji?.imageSource);
+                if (viewModel.SelectedEmoji.sourcePath.IsGif())
+                {
+
+                    StringCollection paths = new StringCollection();
+                    paths.Add(viewModel?.SelectedEmoji.sourcePath);
+                    Clipboard.SetFileDropList(paths);
+
+                }
+                else
+                {
+                    Clipboard.SetImage(viewModel?.SelectedEmoji?.imageSource);
+                }
+
             }
             WindowClose();
         }
         bool IsInClose = false;
         public void WindowClose()
         {
-            if(IsInClose)
+            if (IsInClose)
                 return;
             IsInClose = true;
             Close();
+        }
+
+        private void CurBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is Border)
+            {
+                viewModel.SelectedEmoji = (EmojiSource?)((sender as Border)?.DataContext);
+            }
+            else if (sender is Image)
+            {
+                viewModel.SelectedEmoji = (EmojiSource?)((sender as Image)?.DataContext);
+            }
+
+            if (viewModel?.SelectedEmoji != null)
+            {
+                //DataObject dataObject = new DataObject();
+                //    dataObject.SetImage(viewModel?.SelectedEmoji?.imageSource);
+                //    Clipboard.SetDataObject(dataObject);
+                if (viewModel.SelectedEmoji.sourcePath.IsGif())
+                {
+
+                    StringCollection paths = new StringCollection();
+                    paths.Add(viewModel?.SelectedEmoji.sourcePath);
+                    Clipboard.SetFileDropList(paths);
+
+                }
+                else
+                {
+                    Clipboard.SetImage(viewModel?.SelectedEmoji?.imageSource);
+                }
+
+            }
+            WindowClose();
         }
     }
 }

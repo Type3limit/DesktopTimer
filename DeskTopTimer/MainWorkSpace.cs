@@ -1459,13 +1459,16 @@ namespace DeskTopTimer
                         invokeCount++;
                         if (invokeCount >= 3)
                         {
-                            RunEmojiRequest();
+                            emojiTimer.Enabled = false;
                             emojiTimer.Stop();
+                            RunEmojiRequest();
                         }
                     };
                 }
                 invokeCount = 0;
+                emojiTimer.Enabled = false;
                 emojiTimer.Stop();
+                emojiTimer.Enabled = true;
                 emojiTimer.Start();
             }));
         }
@@ -1486,18 +1489,21 @@ namespace DeskTopTimer
 
                     }
                     lastRequestWords = EmojiKey;
-                    var res = await WebRequestsTool.GetEmoji(EmojiKey, currentPage, 20, FileMapper.CurrentEmojiCacheDir);
-                    ShouldOpenEmojiResult = res.Count > 0;
-                    res.ForEach(x => x.IfDo(o => o.IsFileExist(), (o) =>
+                    var res = WebRequestsTool.GetEmoji(EmojiKey, currentPage, 100, FileMapper.CurrentEmojiCacheDir);
+                    await foreach (var x in res)
                     {
-                        EmojiSource emojiSource = new EmojiSource();
-                        emojiSource.sourcePath = o;
-                        emojiSource.imageSource = ImageTool.GetImage(o);
-                        Application.Current.Dispatcher.Invoke(() =>
+                        x.IfDo(o => o.IsFileExist(), (o) =>
                         {
-                            EmojiResults.Add(emojiSource);
+                           EmojiSource emojiSource = new EmojiSource();
+                           emojiSource.sourcePath = o;
+                           emojiSource.imageSource = ImageTool.GetImage(o);
+                           Application.Current.Dispatcher.Invoke(() =>
+                           {
+                               EmojiResults.Add(emojiSource);
+                               ShouldOpenEmojiResult = EmojiResults.Count > 0;
+                            });
                         });
-                    }));
+                    }
                     if (!isExpand)
                     {
                         SelectedEmoji = EmojiResults.FirstOrDefault();
@@ -2305,6 +2311,11 @@ namespace DeskTopTimer
                     AudioVisualizer.SpStrokeColor = ColorToStringHelper.HexConverter(curConfig.audioVisualizerSetting.drawingRectStrokeColor ??= "#FFFFFFFF");
                     AudioVisualizer.VisualOpacity = curConfig.audioVisualizerSetting.visualOpacity;
                     AudioVisualizer.DataWeight = curConfig.audioVisualizerSetting.dataWeight;
+                }
+
+                if (FileMapper.CurrentEmojiCacheDir.IsDirctoryExist())
+                {
+                    Directory.Delete(FileMapper.CurrentEmojiCacheDir, true);
                 }
 
                 _IsInitComplete = true;

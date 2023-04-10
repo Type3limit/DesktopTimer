@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:gif="http://wpfanimatedgif.codeplex.com"
     xmlns:local="clr-namespace:DeskTopTimer"
     xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -176,7 +177,6 @@
                             BorderThickness="0"
                             ItemContainerStyle="{StaticResource ListBoxStyleTrans}"
                             ItemsSource="{Binding EmojiResults, UpdateSourceTrigger=PropertyChanged}"
-                            PreviewMouseLeftButtonDown="ListBox_PreviewMouseLeftButtonDown"
                             SelectedItem="{Binding SelectedEmoji, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                             <ListBox.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -193,14 +193,21 @@
                                         Width="100"
                                         Height="100"
                                         Margin="1"
-                                        CornerRadius="6">
+                                        CornerRadius="6"
+                                        MouseLeftButtonDown="CurBorder_MouseLeftButtonDown">
                                         <Border.Background>
                                             <LinearGradientBrush>
-                                                <GradientStop Offset="0" Color="#3a7bd5" />
-                                                <GradientStop Offset=".5" Color="#3a6073" />
+                                                <GradientStop Offset="0" Color="#b0c97f" />
+                                                <GradientStop Offset=".5" Color="#e5e4c6" />
                                             </LinearGradientBrush>
                                         </Border.Background>
-                                        <Image Source="{Binding imageSource}" Stretch="Uniform" />
+
+                                        <Image
+                                            gif:ImageBehavior.AnimatedSource="{Binding sourcePath}"
+                                            MouseLeftButtonDown="CurBorder_MouseLeftButtonDown"
+                                            Source="{Binding imageSource}"
+                                            Stretch="Uniform"
+                                            ToolTip="{Binding sourcePath}" />
                                     </Border>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>

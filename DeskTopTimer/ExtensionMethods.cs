@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using FFmpeg.AutoGen;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -218,6 +219,26 @@ namespace DeskTopTimer
             return Regex.IsMatch(input, pattern);
         }
 
+        /// <summary>
+        /// 判断是否为gif
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static bool IsGif(this string source)
+        {
+            if(!source.IsFileExist())
+                return false;
+            var gif = Encoding.ASCII.GetBytes("GIF");    // GIF
+            var buffer = new byte[4];
+            using(Stream stream = File.OpenRead(source))
+            {
+                stream.Read(buffer, 0, buffer.Length);
+                var res= gif.SequenceEqual(buffer.Take(gif.Length));
+                stream.Close();
+                return res;
+            }
+
+        }
         #endregion
 
 

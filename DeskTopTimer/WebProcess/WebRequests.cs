@@ -453,24 +453,36 @@ namespace DeskTopTimer
 
         public const string emojiRequestUrl = "http://www.dbbqb.com/api/search/json?w=";
         public const string emojiImageUrl = "http://image.dbbqb.com/";
-        public async Task<List<string>> GetEmoji(string keywords, int page, int size,string storePath)
+        public async IAsyncEnumerable<string> GetEmoji(string keywords, int page, int size,string storePath)
         {
             Trace.WriteLine($"Get emoji with Key:{keywords}");
             var res = await Dbbqb.SearchAsync(keywords, page, size);
-            List<string> pathes = new List<string>();
             foreach (var info in res)
             {
                 var strPath =storePath.PathCombine($"{info.Id}.jpg");
-                pathes.Add(strPath);
                 if(strPath.IsFileExist())
                 {
+                    var ExStr = strPath.GetImageExtension();
+                    strPath = storePath.PathCombine($"{info.Id}.{ExStr}");
+                    yield return strPath;
                     continue;
                 }
                 using FileStream fs = File.Open(strPath,FileMode.Create);
                 Stream stream = await Dbbqb.Client.GetStreamAsync(info.Path);
                 stream.CopyTo(fs);     
+                fs.Close();
+                if(strPath.IsFileExist())
+                {
+                    if(strPath.IsGif())
+                    {
+                        var nstrPath = storePath.PathCombine($"{info.Id}.gif");
+                        File.Move(strPath,nstrPath);
+                        strPath = nstrPath;
+                    }
+                }
+                yield return strPath;
             }
-            return pathes;
+
         }
 
 
