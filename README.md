@@ -1,7 +1,7 @@
 # 一个桌面时钟
 # Intro
 
-
+## 当前仓库已重构！获取新的更新请移步[此处](https://github.com/Type3limit/DesktopTimerWPFUIRemake)！
 上班摸鱼时的副产物，目前来说主要完成的功能有:  
  >1.基本时间展示功能  
  >2.可自定义的字体以及字体大小以及颜色  
